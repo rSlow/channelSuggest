@@ -2,13 +2,16 @@ import asyncio
 
 from aiogram.types import ContentType, Message, ReplyKeyboardRemove
 
+from FSM.post import Start
 from bot import dp
 from handlers import start
-from orm.users import Dice
+from ORM.users import Dice
 
 
-@dp.message_handler(content_types=ContentType.DICE, state="*")
+@dp.message_handler(content_types=ContentType.DICE, state=Start.start)
 async def dice(message: Message):
+    await Start.dice.set()
+
     if message.dice.emoji in ("🎲", "🎯"):
         if message.dice.emoji == "🎲":
             await Dice.play_cube(user_id=message.from_user.id)

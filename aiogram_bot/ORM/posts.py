@@ -1,10 +1,9 @@
 import enum
 
-from aiogram.types import ContentType
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from orm.base import Base
+from ORM.base import Base
 
 
 class MyEnum(enum.Enum):
@@ -21,7 +20,7 @@ class Post(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id"))
 
-    caption: Mapped[str] = mapped_column(nullable=True)
+    text: Mapped[str] = mapped_column(nullable=True)
     medias: Mapped[list["Media"]] = relationship()
 
 

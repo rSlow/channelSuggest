@@ -1,40 +1,6 @@
 from sqlalchemy import select, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from orm.base import Base, Session
-from orm.posts import Post
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    telegram_id: Mapped[int] = mapped_column(unique=True)
-    username: Mapped[str]
-    active: Mapped[bool] = mapped_column(default=True)
-    dice: Mapped["Dice"] = relationship(back_populates="telegram_user")
-
-    queue_posts: Mapped[list["Post"]] = relationship()
-
-    @classmethod
-    async def add(cls, user_id, username):
-        async with Session() as session:
-            async with session.begin():
-                session.add(
-                    cls(
-                        telegram_id=user_id,
-                        username=username,
-                        dice=Dice()
-                    )
-                )
-
-    @classmethod
-    async def get_all(cls):
-        async with Session() as session:
-            async with session.begin():
-                query = select(cls.telegram_id)
-                result = await session.execute(query)
-                users = result.scalars().all()
-        return users
+from sqlalchemy.orm import Mapped, mapped_column
+from ORM.base import Base, Session
 
 
 class Dice(Base):
@@ -42,7 +8,6 @@ class Dice(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id"))
-    telegram_user: Mapped["User"] = relationship(back_populates="dice")
 
     cube: Mapped[int] = mapped_column(default=0)
     darts: Mapped[int] = mapped_column(default=0)

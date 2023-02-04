@@ -3,8 +3,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
-# DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_URL = "sqlite+aiosqlite:////home/rslow/PycharmProjects/channelSuggest/orm/db.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 Engine = create_async_engine(DATABASE_URL, echo=True)
 Session: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=Engine, expire_on_commit=False)
