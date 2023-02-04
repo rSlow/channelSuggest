@@ -6,7 +6,7 @@ from sqlalchemy.orm import DeclarativeBase
 # DATABASE_URL = os.getenv("DATABASE_URL")
 DATABASE_URL = "sqlite+aiosqlite:////home/rslow/PycharmProjects/channelSuggest/orm/db.db"
 
-Engine = create_async_engine(DATABASE_URL, echo=False)
+Engine = create_async_engine(DATABASE_URL, echo=True)
 Session: async_sessionmaker[AsyncSession] = async_sessionmaker(bind=Engine, expire_on_commit=False)
 
 
@@ -17,7 +17,7 @@ class Base(DeclarativeBase):
 async def create_database():
     try:
         from .users import User
-        from .posts import Post, Media
+        # from .posts import Post, Media
 
         async with Engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

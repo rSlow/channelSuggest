@@ -4,11 +4,17 @@ from aiogram.types import ContentType, Message, ReplyKeyboardRemove
 
 from bot import dp
 from handlers import start
+from orm.users import Dice
 
 
 @dp.message_handler(content_types=ContentType.DICE, state="*")
 async def dice(message: Message):
     if message.dice.emoji in ("🎲", "🎯"):
+        if message.dice.emoji == "🎲":
+            await Dice.play_cube(user_id=message.from_user.id)
+        elif message.dice.emoji == "🎯":
+            await Dice.play_darts(user_id=message.from_user.id)
+
         user_value = message.dice.value
         await message.answer(
             text="Ну хорошо, давай поиграем...",
@@ -26,6 +32,7 @@ async def dice(message: Message):
         await asyncio.sleep(4)
 
     elif message.dice.emoji == "🏀":
+        await Dice.play_basketball(user_id=message.from_user.id)
         match message.dice.value:
             case 1:
                 result_message = "Нууу, братишка, надо тренироваться..."
@@ -43,6 +50,7 @@ async def dice(message: Message):
         await asyncio.sleep(4)
 
     elif message.dice.emoji == "🎰":
+        await Dice.play_casino(user_id=message.from_user.id)
         match message.dice.value:
             case 1:
                 result_message = "Этому гражданину напиток с бара за счёт заведения, быстро!"
@@ -57,6 +65,7 @@ async def dice(message: Message):
         await asyncio.sleep(1.5)
 
     elif message.dice.emoji == "⚽":
+        await Dice.play_football(user_id=message.from_user.id)
         match message.dice.value:
             case 1:
                 result_message = "Нууу, братишка, надо тренироваться..."
