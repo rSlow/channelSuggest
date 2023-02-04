@@ -16,9 +16,10 @@ class BaseKeyboard(ReplyKeyboardMarkup):
         - row_width
     """
 
-    resize_keyboard = True
-    row_width = 2
-    add_on_main_button = True
+    resize_keyboard: bool = True
+    row_width: int = 2
+    input_field_placeholder: str | None = None
+    add_on_main_button: bool = True
     on_main_button = "На главную ◀"
 
     buttons_list: TypeInterface.buttons_list_type | None = None
@@ -26,7 +27,8 @@ class BaseKeyboard(ReplyKeyboardMarkup):
     def __init__(self):
         super(BaseKeyboard, self).__init__(
             resize_keyboard=self.resize_keyboard,
-            row_width=self.row_width
+            row_width=self.row_width,
+            input_field_placeholder=self.input_field_placeholder
         )
 
         if self.buttons_list is not None:

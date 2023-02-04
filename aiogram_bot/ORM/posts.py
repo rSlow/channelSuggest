@@ -1,17 +1,22 @@
 import enum
+from select import select
 
+from aiogram.types import ContentType
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from ORM.base import Base
+from ORM.base import Base, Session
 
 
-class MyEnum(enum.Enum):
-    audio = "audio"
-    video = "video"
-    document = "document"
-    photo = "photo"
-    text = "text"
+class MediaTypes(enum.Enum):
+    audio = ContentType.AUDIO
+    video = ContentType.VIDEO
+    document = ContentType.DOCUMENT
+    photo = ContentType.PHOTO
+    text = ContentType.TEXT
+
+
+MediaTypesList = [i.value for i in MediaTypes]
 
 
 class Post(Base):
@@ -30,4 +35,4 @@ class Media(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
     file_id: Mapped[str]
-    media_type: Mapped[MyEnum]
+    media_type: Mapped["MediaTypes"]

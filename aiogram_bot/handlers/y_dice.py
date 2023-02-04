@@ -1,11 +1,12 @@
 import asyncio
 
-from aiogram.types import ContentType, Message, ReplyKeyboardRemove
+from aiogram.types import ContentType, Message
 
 from FSM.post import Start
 from bot import dp
 from handlers import start
 from ORM.users import Dice
+from keyboads.start import DiceKeyboard
 
 
 @dp.message_handler(content_types=ContentType.DICE, state=Start.start)
@@ -21,9 +22,11 @@ async def dice(message: Message):
         user_value = message.dice.value
         await message.answer(
             text="Ну хорошо, давай поиграем...",
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=DiceKeyboard.get_random_keyboard()
         )
-        msg_dice = await message.answer_dice(emoji=message.dice.emoji)
+        msg_dice = await message.answer_dice(
+            emoji=message.dice.emoji,
+        )
         bot_value = msg_dice.dice.value
 
         if user_value > bot_value:
