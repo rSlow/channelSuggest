@@ -8,4 +8,4 @@ class Start(StatesGroup):
 
 class AddPost(StatesGroup):
     set_post = State()
-    add_post = State()
+    confirm_post = State()

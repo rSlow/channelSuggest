@@ -20,6 +20,7 @@ class BaseKeyboard(ReplyKeyboardMarkup):
     row_width: int = 2
     input_field_placeholder: str | None = None
     add_on_main_button: bool = True
+
     on_main_button = "На главную ◀"
 
     buttons_list: TypeInterface.buttons_list_type | None = None

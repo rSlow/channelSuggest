@@ -1,13 +1,16 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
-from aiogram.types import Message, ContentType, ReplyKeyboardRemove
+from aiogram.types import Message
 
 from FSM.post import Start, AddPost
 from ORM.posts import MediaTypesList
 from ORM.users import User
 from bot import dp
+from handlers import start
+from keyboads.post import AddPostKeyboard, ConfirmPostKeyboard
 from keyboads.start import StartKeyboard
-from utils.proxy import init_post_proxy, add_text_to_post, add_media_to_post, get_post
+from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message
+from utils.post_proxy import init_post_proxy, get_post_from_proxy
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)
@@ -23,41 +26,68 @@ async def suggest_post(message: Message, state: FSMContext):
              f" - голый текст (без фото и т.д.)\n"
              f" - документ (в крайнем случае, добавление без причины - повод для отклонения поста)\n"
              f" - аудио (не голосовое - его бот попросту не примет)\n\n"
-             f"После того как пост подготовлен - отправляйте, дальше будет предпросмотр "
-             f"с утверждением поста или его отклонением.\n\n"
+             f"После того как пост подготовлен - отправляйте и нажимайте кнопку `Предпросмотр ➡`, "
+             f"чтобы утвердить или отклонить пост.\n\n"
              f"<b>ОГРОМНАЯ ПРОСЬБА:</b> обращайте внимание на правила русского языка.",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=AddPostKeyboard()
     )
 
 
+@dp.message_handler(Text(equals=AddPostKeyboard.Buttons.view), state=AddPost.set_post)
+async def preview_post(message: Message, state: FSMContext):
+    post = await get_post_from_proxy(state)
+
+    if not post.text and not post.medias:
+        await message.answer(
+            text="Чтобы предложить пост, он должен иметь хотя бы одно фото или какой-либо текст."
+        )
+    else:
+        await AddPost.confirm_post.set()
+
+        if len(post.medias) == 0:
+            await message.answer(
+                text=post.text
+            )
+        else:
+            post_message = await compile_post_message(post=post)
+            await message.answer_media_group(
+                media=post_message
+            )
+
+        await message.answer(
+            text="Отправляем пост?",
+            reply_markup=ConfirmPostKeyboard()
+        )
+
+
+# "it should be upper, but button of keyboard will be checked as text of media"
 @dp.message_handler(content_types=MediaTypesList, state=AddPost.set_post)
 async def accept_media(message: Message, state: FSMContext):
-    match message.content_type:
-        case ContentType.PHOTO:
-            file_id = message.photo[-1].file_id
-        case ContentType.VIDEO:
-            file_id = message.video.file_id
-        case ContentType.AUDIO:
-            file_id = message.audio.file_id
-        case ContentType.DOCUMENT:
-            file_id = message.document.file_id
-        case ContentType.TEXT:
-            file_id = None
-        case _ as content_type:
-            raise TypeError(f"unexpected content type format - {content_type}")
+    file_id, text, content_type = await parse_message(message=message)
+    await set_data_in_post_proxy(
+        file_id=file_id,
+        text=text,
+        content_type=content_type,
+        state=state
+    )
+    await message.delete()
 
-    try:
-        text = message.html_text
-    except TypeError:
-        text = None
 
-    if text is not None:
-        await add_text_to_post(text=text, state=state)
-    if file_id is not None:
-        await add_media_to_post(file_id=file_id, media_type=message.content_type, state=state)
-
-    # post = await get_post(state)
-    # await User.add_post(
-    #     user_id=message.from_user.id,
-    #     post=post
-    # )
+@dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.no), state=AddPost.confirm_post)
+@dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.yes), state=AddPost.confirm_post)
+async def confirm_post(message: Message, state: FSMContext):
+    if message.text == ConfirmPostKeyboard.Buttons.yes:
+        post = await get_post_from_proxy(state)
+        await User.add_post(
+            user_id=message.from_user.id,
+            post=post
+        )
+        await start(
+            message=message,
+            answer="Пост предложен и скоро будет обработан."
+        )
+    else:
+        await start(
+            message=message,
+            answer="Пост не сохранен. Возвращаемся в главное меню."
+        )

@@ -10,6 +10,7 @@ class StartKeyboard(BaseKeyboard):
         suggest = "Предложить пост"
         posts = "Мои посты"
 
+    add_on_main_button = False
     buttons_list = [
         Buttons.suggest,
         Buttons.posts

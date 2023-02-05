@@ -1,7 +1,6 @@
 import enum
-from select import select
 
-from aiogram.types import ContentType
+from aiogram.types import ContentType, MediaGroup
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 

@@ -28,6 +28,6 @@ async def add_media_to_post(file_id: str, media_type: str, state: FSMContext):
             )
 
 
-async def get_post(state: FSMContext):
+async def get_post_from_proxy(state: FSMContext):
     async with state.proxy() as data:
         return data[POST]
