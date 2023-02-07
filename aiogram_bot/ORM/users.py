@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from ORM.base import Base, Session
 from ORM.dice import Dice
@@ -41,15 +41,3 @@ class User(Base):
                 users = result.scalars().all()
         return users
 
-    @classmethod
-    async def add_post(cls, user_id: int, post: Post):
-        async with Session() as session:
-            async with session.begin():
-                query = select(
-                    cls
-                ).options(
-                    selectinload(cls.queue_posts)
-                )
-                result = await session.execute(query)
-                user = result.scalars().one()
-                user.queue_posts.append(post)

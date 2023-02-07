@@ -7,6 +7,9 @@ from utils.post_proxy import add_text_to_post, add_media_to_post
 
 class PostMediaGroup(MediaGroup):
     def attach_media(self: MediaGroup, media: "Media", caption: str | None = None):
+        if isinstance(media.media_type, MediaTypes):
+            media.media_type = media.media_type.value
+
         match media.media_type:
             case MediaTypes.photo.value:
                 self.attach_photo(
@@ -30,6 +33,14 @@ class PostMediaGroup(MediaGroup):
                 )
             case _:
                 raise TypeError(f"unexpected media type - {media.media_type}")
+
+
+class AudioMixedError(TypeError):
+    pass
+
+
+class DocumentMixedError(TypeError):
+    pass
 
 
 async def parse_message(message: Message):
@@ -68,6 +79,12 @@ async def set_data_in_post_proxy(
 
 
 async def compile_post_message(post: Post):
+    media_types_in_post = set([media.media_type for media in post.medias if media.media_type is not None])
+    if MediaTypes.document.value in media_types_in_post and len(media_types_in_post) > 1:
+        raise DocumentMixedError
+    if MediaTypes.audio.value in media_types_in_post and len(media_types_in_post) > 1:
+        raise AudioMixedError
+
     media_group = PostMediaGroup()
     first_media: "Media" = post.medias[0]
     media_group.attach_media(
@@ -79,3 +96,5 @@ async def compile_post_message(post: Post):
         media_group.attach_media(media=media)
 
     return media_group
+
+

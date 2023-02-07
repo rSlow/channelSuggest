@@ -1,8 +1,9 @@
 import enum
 
-from aiogram.types import ContentType, MediaGroup
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from aiogram.types import ContentType
+from sqlalchemy import ForeignKey, select, func, delete
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import mapped_column, Mapped, relationship, selectinload
 
 from ORM.base import Base, Session
 
@@ -26,6 +27,65 @@ class Post(Base):
 
     text: Mapped[str] = mapped_column(nullable=True)
     medias: Mapped[list["Media"]] = relationship()
+
+    async def add(self):
+        async with Session() as session:
+            async with session.begin():
+                session.add(self)
+
+    @classmethod
+    async def get_user_post(cls, user_id: int, post_number: int):
+        async with Session() as session:
+            query = select(
+                cls
+            ).filter_by(
+                user_id=user_id
+            ).options(
+                selectinload(cls.medias)
+            ).offset(
+                post_number - 1
+            ).limit(1)
+            result = await session.execute(query)
+            post: cls = result.scalars().one()
+        return post
+
+    @classmethod
+    async def get_user_posts(cls, user_id: int):
+        async with Session() as session:
+            query = select(
+                cls
+            ).filter_by(
+                user_id=user_id
+            ).options(
+                selectinload(cls.medias)
+            )
+            result = await session.execute(query)
+            posts = result.scalars().all()
+        return posts
+
+    @classmethod
+    async def get_user_posts_quantity(cls, user_id: int):
+        async with Session() as session:
+            query = select(
+                func.count()
+            ).select_from(
+                cls
+            ).filter_by(
+                user_id=user_id
+            )
+            result = await session.execute(query)
+            try:
+                posts_quantity = result.scalars().one()
+            except NoResultFound:
+                posts_quantity = 0
+        return posts_quantity
+
+    @classmethod
+    async def delete(cls, post):
+        async with Session() as session:
+            async with session.begin():
+                query = delete(cls).filter_by(id=post.id)
+                await session.execute(query)
 
 
 class Media(Base):

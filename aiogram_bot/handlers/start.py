@@ -1,7 +1,7 @@
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
-from FSM.post import Start
+from FSM.post_add import Start
 from bot import dp
 from utils.time_answer import TimeAnswer
 from ORM.users import User

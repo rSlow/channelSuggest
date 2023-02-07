@@ -2,21 +2,22 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
-from FSM.post import Start, AddPost
+from FSM.post_add import Start, AddPost
 from ORM.posts import MediaTypesList
 from ORM.users import User
 from bot import dp
 from handlers import start
-from keyboads.post import AddPostKeyboard, ConfirmPostKeyboard
+from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard
 from keyboads.start import StartKeyboard
-from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message
+from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message, AudioMixedError, \
+    DocumentMixedError
 from utils.post_proxy import init_post_proxy, get_post_from_proxy
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)
 async def suggest_post(message: Message, state: FSMContext):
     await AddPost.set_post.set()
-    await init_post_proxy(state=state)
+    await init_post_proxy(state=state, user_id=message.from_user.id)
     await message.answer(
         text=f"Добавьте пост так, как вы хотите, чтобы он выглядел.\n"
              f"Можно добавить:\n"
@@ -25,7 +26,8 @@ async def suggest_post(message: Message, state: FSMContext):
              f" - описание к ним\n"
              f" - голый текст (без фото и т.д.)\n"
              f" - документ (в крайнем случае, добавление без причины - повод для отклонения поста)\n"
-             f" - аудио (не голосовое - его бот попросту не примет)\n\n"
+             f" - аудио (не голосовое сообщение и только в крайнем случае, добавление без причины - "
+             f"повод для отклонения поста)\n\n"
              f"После того как пост подготовлен - отправляйте и нажимайте кнопку `Предпросмотр ➡`, "
              f"чтобы утвердить или отклонить пост.\n\n"
              f"<b>ОГРОМНАЯ ПРОСЬБА:</b> обращайте внимание на правила русского языка.",
@@ -39,7 +41,7 @@ async def preview_post(message: Message, state: FSMContext):
 
     if not post.text and not post.medias:
         await message.answer(
-            text="Чтобы предложить пост, он должен иметь хотя бы одно фото или какой-либо текст."
+            text="Чтобы предложить пост, он должен иметь хотя бы один медиафайл или какой-либо текст."
         )
     else:
         await AddPost.confirm_post.set()
@@ -48,16 +50,31 @@ async def preview_post(message: Message, state: FSMContext):
             await message.answer(
                 text=post.text
             )
-        else:
-            post_message = await compile_post_message(post=post)
-            await message.answer_media_group(
-                media=post_message
+            await message.answer(
+                text="Отправляем пост?",
+                reply_markup=ConfirmPostKeyboard()
             )
 
-        await message.answer(
-            text="Отправляем пост?",
-            reply_markup=ConfirmPostKeyboard()
-        )
+        else:
+            try:
+                post_message = await compile_post_message(post=post)
+                await message.answer_media_group(
+                    media=post_message
+                )
+                await message.answer(
+                    text="Отправляем пост?",
+                    reply_markup=ConfirmPostKeyboard()
+                )
+            except AudioMixedError:
+                await start(
+                    message=message,
+                    answer="Аудио не может быть прикреплено совместно с другими видами медиафайлов. Пост отклонен."
+                )
+            except DocumentMixedError:
+                await start(
+                    message=message,
+                    answer="Документ не может быть прикреплен совместно с другими видами медиафайлов. Пост отклонен."
+                )
 
 
 # "it should be upper, but button of keyboard will be checked as text of media"
@@ -78,10 +95,8 @@ async def accept_media(message: Message, state: FSMContext):
 async def confirm_post(message: Message, state: FSMContext):
     if message.text == ConfirmPostKeyboard.Buttons.yes:
         post = await get_post_from_proxy(state)
-        await User.add_post(
-            user_id=message.from_user.id,
-            post=post
-        )
+        await post.add()
+
         await start(
             message=message,
             answer="Пост предложен и скоро будет обработан."
