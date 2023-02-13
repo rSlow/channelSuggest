@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from aiogram.types import ReplyKeyboardMarkup
 
 
@@ -48,3 +50,4 @@ class BaseKeyboard(ReplyKeyboardMarkup):
             else:
                 self.add(*buttons_list)
                 return
+from contextlib import contextmanager

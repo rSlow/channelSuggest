@@ -10,7 +10,7 @@ from FSM.memory_storage import ModifiedMemoryStorage
 class CustomBot(Bot):
     def __init__(self, *args, **kwargs):
         super(CustomBot, self).__init__(*args, **kwargs)
-        self.admins = os.getenv("ADMIN_IDS").split(" ")
+        self.admins = [int(user_id) for user_id in os.getenv("ADMIN_IDS").split(" ")]
         self.channel_id = os.getenv("CHANNEL_ID")
 
 

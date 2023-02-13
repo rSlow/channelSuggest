@@ -1,7 +1,19 @@
 from aiogram.dispatcher import FSMContext
 
 from ORM.posts import Post, MediaTypesList, Media
-from ORM.users import User
+
+
+class PostAddInterface:
+    pass
+
+
+class PostViewInterface:
+    pass
+
+
+class PostAdminViewInterface:
+    pass
+
 
 POST = "post"
 VIEW_POST = "view_post"

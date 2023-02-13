@@ -2,7 +2,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
 from FSM.post_add import Start
-from bot import dp
+from bot import dp, bot
 from utils.time_answer import TimeAnswer
 from ORM.users import User
 from keyboads.start import StartKeyboard, BaseKeyboard
@@ -25,7 +25,10 @@ async def start(message: Message, answer: str | None = None):
 
     await Start.start.set()
 
+    is_user_admin = message.from_user.id in bot.admins
     await message.answer(
         text=answer or TimeAnswer(message.date.time()),
-        reply_markup=StartKeyboard()
+        reply_markup=StartKeyboard(
+            add_admin_button=is_user_admin
+        )
     )

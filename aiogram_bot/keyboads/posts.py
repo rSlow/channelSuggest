@@ -1,6 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup
 
-from ORM.posts import Post
 from .base import BaseKeyboard
 
 
@@ -31,6 +30,7 @@ class UserPostKeyboard(ReplyKeyboardMarkup):
         next = ">"
         previous = "<"
         delete = "Удалить 🗑"
+        on_main = BaseKeyboard.on_main_button
 
     def __init__(self, posts_quantity: int, current_post_number: int, *args, **kwargs):
         super().__init__(resize_keyboard=True, *args, **kwargs)
@@ -42,3 +42,4 @@ class UserPostKeyboard(ReplyKeyboardMarkup):
             self.insert(self.Buttons.next)
 
         self.row(self.Buttons.delete)
+        self.insert(self.Buttons.on_main)

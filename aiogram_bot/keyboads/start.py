@@ -1,20 +1,25 @@
 import random
 
-from aiogram.types import ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup
 
 from .base import BaseKeyboard
 
 
-class StartKeyboard(BaseKeyboard):
+class StartKeyboard(ReplyKeyboardMarkup):
     class Buttons:
         suggest = "Предложить пост"
         posts = "Мои посты"
+        admin_posts = "Посты в очереди"
 
-    add_on_main_button = False
-    buttons_list = [
-        Buttons.suggest,
-        Buttons.posts
-    ]
+    def __init__(self, add_admin_button: bool = False):
+        super().__init__(
+            resize_keyboard=True,
+            row_width=2,
+        )
+        self.add(self.Buttons.suggest)
+        self.insert(self.Buttons.posts)
+        if add_admin_button:
+            self.add(self.Buttons.admin_posts)
 
 
 class DiceKeyboard(BaseKeyboard):

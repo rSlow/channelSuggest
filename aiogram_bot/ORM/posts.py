@@ -26,7 +26,9 @@ class Post(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id"))
 
     text: Mapped[str] = mapped_column(nullable=True)
-    medias: Mapped[list["Media"]] = relationship()
+    medias: Mapped[list["Media"]] = relationship(
+        cascade="all, delete, delete-orphan"
+    )
 
     async def add(self):
         async with Session() as session:
