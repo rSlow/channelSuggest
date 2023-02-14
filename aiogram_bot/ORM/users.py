@@ -1,5 +1,5 @@
-from sqlalchemy import select, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
+from sqlalchemy import select
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ORM.base import Base, Session
 from ORM.dice import Dice
 from ORM.posts import Post
@@ -11,22 +11,24 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_id: Mapped[int] = mapped_column(unique=True)
-    username: Mapped[str]
+    fullname: Mapped[str]
+    mention: Mapped[str] = mapped_column(nullable=True)
     active: Mapped[bool] = mapped_column(default=True)
 
     dice: Mapped["Dice"] = relationship()
     state: Mapped["UserState"] = relationship()
 
-    queue_posts: Mapped[list["Post"]] = relationship()
+    queue_posts = relationship("Post", back_populates="user")
 
     @classmethod
-    async def add(cls, user_id: int, username: str):
+    async def add(cls, user_id: int, fullname: str, mention: str):
         async with Session() as session:
             async with session.begin():
                 session.add(
                     cls(
                         telegram_id=user_id,
-                        username=username,
+                        fullname=fullname,
+                        mention=mention,
                         dice=Dice(),
                         state=UserState()
                     )
@@ -40,4 +42,3 @@ class User(Base):
                 result = await session.execute(query)
                 users = result.scalars().all()
         return users
-

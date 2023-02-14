@@ -24,6 +24,7 @@ class Post(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id"))
+    user = relationship("User", back_populates="queue_posts")
 
     text: Mapped[str] = mapped_column(nullable=True)
     medias: Mapped[list["Media"]] = relationship(
@@ -82,6 +83,8 @@ class Post(Base):
                 cls
             ).options(
                 selectinload(cls.medias)
+            ).options(
+                selectinload(cls.user)
             ).offset(
                 post_number - 1
             ).limit(1)

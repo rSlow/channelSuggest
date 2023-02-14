@@ -61,21 +61,21 @@ async def view_admin_suggest_post(message: Message,
                 media=post_message
             )
 
-    user_block = render_template(
-        template_name="user_block.jinja2",
-        data={
-            "user_mention": message.from_user.mention,
-            "user_id": message.from_user.id,
-            "user_fullname": message.from_user.full_name,
-        }
-    )
-    await message.answer(
-        text=user_block,
-        reply_markup=AdminPostKeyboard(
-            posts_quantity=posts_quantity,
-            current_post_number=post_number
+        user_block = render_template(
+            template_name="user_block.jinja2",
+            data={
+                "user_mention": post.user.mention,
+                "user_id": post.user.id,
+                "user_fullname": post.user.fullname,
+            }
         )
-    )
+        await message.answer(
+            text=user_block,
+            reply_markup=AdminPostKeyboard(
+                posts_quantity=posts_quantity,
+                current_post_number=post_number
+            )
+        )
 
 
 dp.register_message_handler(callback=delete_center_button_message, regexp=r"\d+\s[/]\s\d", state=PostAdminView.view)

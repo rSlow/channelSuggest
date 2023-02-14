@@ -16,12 +16,12 @@ async def on_main(message: Message):
 @dp.message_handler(state="*", commands=["start"])
 async def start(message: Message, answer: str | None = None):
     user_id = message.from_user.id
-    if answer is None:
-        if user_id not in await User.get_all():
-            await User.add(
-                user_id=user_id,
-                username=message.from_user.username
-            )
+    if answer is None and user_id not in await User.get_all():
+        await User.add(
+            user_id=user_id,
+            fullname=message.from_user.full_name,
+            mention=message.from_user.mention
+        )
 
     await Start.start.set()
 
