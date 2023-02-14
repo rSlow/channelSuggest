@@ -14,11 +14,7 @@ from handlers.unregistered import delete_center_button_message
 from keyboads.posts import UserPostKeyboard
 from keyboads.start import StartKeyboard
 from utils.post_processors import compile_post_message
-from utils.post_user_proxy import (init_posts_quantity_and_current,
-                                   get_posts_quantity,
-                                   get_current_post_number,
-                                   set_post_in_proxy,
-                                   get_view_post_from_proxy)
+from utils.proxy_interface import ProxyInterface
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.posts), state=Start.start)
@@ -26,13 +22,13 @@ async def view_user_post(message: Message,
                          state: FSMContext,
                          post_number: int = 1,
                          update_posts_quantity: bool = True):
-    await init_posts_quantity_and_current(
+    await ProxyInterface.init(
         state=state,
         current_post=post_number,
         update_posts_quantity=update_posts_quantity
     )
-    posts_quantity = await get_posts_quantity(
-        state=state,
+    posts_quantity = await ProxyInterface.get_posts_quantity(
+        state=state
     )
     if posts_quantity == 0:
         await start(
@@ -45,7 +41,7 @@ async def view_user_post(message: Message,
             user_id=message.from_user.id,
             post_number=post_number
         )
-        await set_post_in_proxy(
+        await ProxyInterface.set_post(
             state=state,
             post=user_post
         )
@@ -80,7 +76,7 @@ dp.register_message_handler(callback=delete_center_button_message, regexp=r"\d+\
 
 @dp.message_handler(Text(equals=UserPostKeyboard.Buttons.previous), state=PostView.view)
 async def get_previous_post(message: Message, state: FSMContext):
-    previous_post_number = await get_current_post_number(state=state) - 1
+    previous_post_number = await ProxyInterface.get_current_post_number(state=state) - 1
 
     if previous_post_number == 0:
         await message.delete()
@@ -100,8 +96,8 @@ async def get_previous_post(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=UserPostKeyboard.Buttons.next), state=PostView.view)
 async def get_next_post(message: Message, state: FSMContext):
-    next_post_number = await get_current_post_number(state=state) + 1
-    posts_quantity = await get_posts_quantity(state=state)
+    next_post_number = await ProxyInterface.get_current_post_number(state=state) + 1
+    posts_quantity = await ProxyInterface.get_posts_quantity(state=state)
 
     if next_post_number > posts_quantity:
         await message.delete()
@@ -121,12 +117,12 @@ async def get_next_post(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=UserPostKeyboard.Buttons.delete), state=PostView.view)
 async def get_delete_post(message: Message, state: FSMContext):
-    current_post_number = await get_current_post_number(state=state)
-    posts_quantity = await get_posts_quantity(state=state)
+    current_post_number = await ProxyInterface.get_current_post_number(state=state)
+    posts_quantity = await ProxyInterface.get_posts_quantity(state=state)
     if current_post_number == posts_quantity:
         current_post_number -= 1
 
-    current_post = await get_view_post_from_proxy(
+    current_post = await ProxyInterface.get_post(
         state=state
     )
     await Post.delete(current_post)

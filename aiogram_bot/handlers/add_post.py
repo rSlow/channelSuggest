@@ -5,7 +5,7 @@ from aiogram.types import Message
 from FSM.post_add import Start, AddPost
 from ORM.posts import MediaTypesList
 from bot import dp
-from handlers import start
+from handlers.start import start
 from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard
 from keyboads.start import StartKeyboard
 from templates.posts import POST_EXPLANATION_MESSAGE

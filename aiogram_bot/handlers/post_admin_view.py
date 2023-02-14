@@ -12,6 +12,7 @@ from keyboads.posts import AdminPostKeyboard
 from keyboads.start import StartKeyboard
 from templates import render_template
 from utils.admin import admin_required
+from utils.proxy_interface import ProxyAdminInterface
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.admin_posts), state=Start.start)
@@ -20,6 +21,11 @@ async def view_admin_suggest_post(message: Message,
                                   state: FSMContext,
                                   post_number: int = 1,
                                   update_posts_quantity: bool = True):
+    await ProxyAdminInterface.init(
+        state=state,
+        current_post=post_number,
+        update_posts_quantity=update_posts_quantity
+    )
     posts_quantity = await Post.get_posts_quantity()
 
     user_block = render_template(
