@@ -8,28 +8,18 @@ from bot import dp
 from handlers import start
 from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard
 from keyboads.start import StartKeyboard
-from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message, AudioMixedError, \
-    DocumentMixedError
+from templates.posts import POST_EXPLANATION_MESSAGE
+from utils.exceptions import AudioMixedError, DocumentMixedError
+from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message
 from utils.post_proxy import init_post_proxy, get_post_from_proxy
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)
 async def suggest_post(message: Message, state: FSMContext):
     await AddPost.set_post.set()
-    await init_post_proxy(state=state, user_id=message.from_user.id)
+    await init_post_proxy(state=state)
     await message.answer(
-        text=f"Добавьте пост так, как вы хотите, чтобы он выглядел.\n"
-             f"Можно добавить:\n"
-             f" - фото\n"
-             f" - видео\n"
-             f" - описание к ним\n"
-             f" - голый текст (без фото и т.д.)\n"
-             f" - документ (в крайнем случае, добавление без причины - повод для отклонения поста)\n"
-             f" - аудио (не голосовое сообщение и только в крайнем случае, добавление без причины - "
-             f"повод для отклонения поста)\n\n"
-             f"После того как пост подготовлен - отправляйте и нажимайте кнопку `Предпросмотр ➡`, "
-             f"чтобы утвердить или отклонить пост.\n\n"
-             f"<b>ОГРОМНАЯ ПРОСЬБА:</b> обращайте внимание на правила русского языка.",
+        text=POST_EXPLANATION_MESSAGE,
         reply_markup=AddPostKeyboard()
     )
 
@@ -45,7 +35,7 @@ async def preview_post(message: Message, state: FSMContext):
     else:
         await AddPost.confirm_post.set()
 
-        if len(post.medias) == 0:
+        if not post.medias:
             await message.answer(
                 text=post.text
             )

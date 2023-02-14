@@ -1,19 +1,7 @@
 from aiogram.dispatcher import FSMContext
 
 from ORM.posts import Post, MediaTypesList, Media
-
-
-class PostAddInterface:
-    pass
-
-
-class PostViewInterface:
-    pass
-
-
-class PostAdminViewInterface:
-    pass
-
+from utils.exceptions import MediaTypeError
 
 POST = "post"
 VIEW_POST = "view_post"
@@ -21,10 +9,10 @@ POSTS_QUANTITY = "posts_quantity"
 CURRENT_VIEW_POST = "current_view_post"
 
 
-async def init_post_proxy(state: FSMContext, user_id: int):
+async def init_post_proxy(state: FSMContext):
     async with state.proxy() as data:
         data[POST] = Post(
-            user_id=user_id
+            user_id=state.user
         )
 
 
@@ -37,7 +25,7 @@ async def add_text_to_post(text: str, state: FSMContext):
 
 async def add_media_to_post(file_id: str, media_type: str, state: FSMContext):
     if media_type not in MediaTypesList:
-        raise TypeError(f"{media_type} not expected as media type")
+        raise MediaTypeError(media_type)
     else:
         async with state.proxy() as data:
             post: Post = data[POST]

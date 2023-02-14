@@ -40,7 +40,6 @@ async def view_user_post(message: Message,
             message=message,
             answer="Ваших постов нет в очереди."
         )
-
     else:
         await PostView.view.set()
         user_post = await Post.get_user_post(

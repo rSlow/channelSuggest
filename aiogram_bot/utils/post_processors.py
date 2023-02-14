@@ -2,6 +2,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import ContentType, Message, MediaGroup
 
 from ORM.posts import Post, MediaTypes, Media
+from utils.exceptions import MediaTypeError, DocumentMixedError, AudioMixedError
 from utils.post_proxy import add_text_to_post, add_media_to_post
 
 
@@ -32,15 +33,7 @@ class PostMediaGroup(MediaGroup):
                     caption=caption
                 )
             case _:
-                raise TypeError(f"unexpected media type - {media.media_type}")
-
-
-class AudioMixedError(TypeError):
-    pass
-
-
-class DocumentMixedError(TypeError):
-    pass
+                raise MediaTypeError(media.media_type)
 
 
 async def parse_message(message: Message):
@@ -96,5 +89,3 @@ async def compile_post_message(post: Post):
         media_group.attach_media(media=media)
 
     return media_group
-
-
