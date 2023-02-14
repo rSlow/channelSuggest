@@ -89,6 +89,33 @@ class Post(Base):
                 query = delete(cls).filter_by(id=post.id)
                 await session.execute(query)
 
+    @classmethod
+    async def get_all(cls):
+        async with Session() as session:
+            query = select(
+                cls
+            ).options(
+                selectinload(cls.medias)
+            )
+            result = await session.execute(query)
+            posts = result.scalars().all()
+        return posts
+
+    @classmethod
+    async def get_posts_quantity(cls):
+        async with Session() as session:
+            query = select(
+                func.count()
+            ).select_from(
+                cls
+            )
+            result = await session.execute(query)
+            try:
+                posts_quantity = result.scalars().one()
+            except NoResultFound:
+                posts_quantity = 0
+        return posts_quantity
+
 
 class Media(Base):
     __tablename__ = "medias"

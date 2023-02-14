@@ -3,7 +3,7 @@ from aiogram.types import ContentType, Message, MediaGroup
 
 from ORM.posts import Post, MediaTypes, Media
 from utils.exceptions import MediaTypeError, DocumentMixedError, AudioMixedError
-from utils.post_proxy import add_text_to_post, add_media_to_post
+from utils.post_add_proxy import add_text_to_post, add_media_to_post
 
 
 class PostMediaGroup(MediaGroup):

@@ -9,15 +9,16 @@ from FSM.post_add import Start
 from FSM.posts_view import PostView
 from ORM.posts import Post
 from bot import dp
-from handlers import start
+from handlers.start import start
+from handlers.unregistered import delete_center_button_message
 from keyboads.posts import UserPostKeyboard
 from keyboads.start import StartKeyboard
 from utils.post_processors import compile_post_message
-from utils.post_proxy import (init_posts_quantity_and_current,
-                              get_posts_quantity,
-                              get_current_post_number,
-                              set_post_in_proxy,
-                              get_view_post_from_proxy)
+from utils.post_user_proxy import (init_posts_quantity_and_current,
+                                   get_posts_quantity,
+                                   get_current_post_number,
+                                   set_post_in_proxy,
+                                   get_view_post_from_proxy)
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.posts), state=Start.start)
@@ -27,14 +28,12 @@ async def view_user_post(message: Message,
                          update_posts_quantity: bool = True):
     await init_posts_quantity_and_current(
         state=state,
-        user_id=message.from_user.id,
         current_post=post_number,
         update_posts_quantity=update_posts_quantity
     )
     posts_quantity = await get_posts_quantity(
         state=state,
     )
-
     if posts_quantity == 0:
         await start(
             message=message,
@@ -76,9 +75,7 @@ async def view_user_post(message: Message,
             )
 
 
-@dp.message_handler(regexp=r"\d+\s[/]\s\d", state=PostView.view)
-async def delete_center_button_message(message: Message):
-    await message.delete()
+dp.register_message_handler(callback=delete_center_button_message, regexp=r"\d+\s[/]\s\d", state=PostView.view)
 
 
 @dp.message_handler(Text(equals=UserPostKeyboard.Buttons.previous), state=PostView.view)

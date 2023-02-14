@@ -11,7 +11,7 @@ from keyboads.start import StartKeyboard
 from templates.posts import POST_EXPLANATION_MESSAGE
 from utils.exceptions import AudioMixedError, DocumentMixedError
 from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message
-from utils.post_proxy import init_post_proxy, get_post_from_proxy
+from utils.post_add_proxy import init_post_proxy, get_post_from_proxy
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)

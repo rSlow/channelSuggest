@@ -1,0 +1,8 @@
+{% set href_template = "tg://user?id=" %}
+
+by
+{% if not user_mention %}
+    <b><a href="{{ href_template }}{{ user_id }}">{{ user_fullname }}</a></b>
+{% else %}
+    <b>{{ user_fullname }}</b> <a href="{{ href_template }}{{ user_id }}">{{ user_mention }}</a>
+{% endif %}
