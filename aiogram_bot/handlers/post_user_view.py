@@ -13,6 +13,7 @@ from handlers.start import start
 from handlers.unregistered import delete_center_button_message
 from keyboads.posts import UserPostKeyboard
 from keyboads.start import StartKeyboard
+from utils.messages import view_message_delete
 from utils.post_processors import compile_post_message
 from utils.proxy_interface import ProxyInterface
 
@@ -25,7 +26,8 @@ async def view_user_post(message: Message,
     await ProxyInterface.init(
         state=state,
         current_post=post_number,
-        update_posts_quantity=update_posts_quantity
+        update_posts_quantity=update_posts_quantity,
+        post_quantity_func=Post.get_user_posts_quantity(user_id=message.from_user.id)
     )
     posts_quantity = await ProxyInterface.get_posts_quantity(
         state=state
@@ -79,12 +81,7 @@ async def get_previous_post(message: Message, state: FSMContext):
     previous_post_number = await ProxyInterface.get_current_post_number(state=state) - 1
 
     if previous_post_number == 0:
-        await message.delete()
-        warning_message = await message.answer(
-            text="Не надо так делать больше. Нажимаем только на кнопочки."
-        )
-        await asyncio.sleep(2)
-        await warning_message.delete()
+        await view_message_delete(message)
     else:
         await view_user_post(
             message=message,
@@ -100,12 +97,7 @@ async def get_next_post(message: Message, state: FSMContext):
     posts_quantity = await ProxyInterface.get_posts_quantity(state=state)
 
     if next_post_number > posts_quantity:
-        await message.delete()
-        warning_message = await message.answer(
-            text="Не надо так делать больше. Нажимаем только на кнопочки."
-        )
-        await asyncio.sleep(2)
-        await warning_message.delete()
+        await view_message_delete(message)
     else:
         await view_user_post(
             message=message,

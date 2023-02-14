@@ -52,20 +52,6 @@ class Post(Base):
         return post
 
     @classmethod
-    async def get_user_posts(cls, user_id: int):
-        async with Session() as session:
-            query = select(
-                cls
-            ).filter_by(
-                user_id=user_id
-            ).options(
-                selectinload(cls.medias)
-            )
-            result = await session.execute(query)
-            posts = result.scalars().all()
-        return posts
-
-    @classmethod
     async def get_user_posts_quantity(cls, user_id: int):
         async with Session() as session:
             query = select(
@@ -90,16 +76,18 @@ class Post(Base):
                 await session.execute(query)
 
     @classmethod
-    async def get_all(cls):
+    async def get_post(cls, post_number: int):
         async with Session() as session:
             query = select(
                 cls
             ).options(
                 selectinload(cls.medias)
-            )
+            ).offset(
+                post_number - 1
+            ).limit(1)
             result = await session.execute(query)
-            posts = result.scalars().all()
-        return posts
+            post: cls = result.scalars().one()
+        return post
 
     @classmethod
     async def get_posts_quantity(cls):

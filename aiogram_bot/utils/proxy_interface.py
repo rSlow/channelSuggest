@@ -1,3 +1,4 @@
+from collections.abc import Coroutine
 from typing import Any
 
 from aiogram.dispatcher import FSMContext
@@ -32,12 +33,11 @@ class ProxyInterface:
     async def init(cls,
                    state: FSMContext,
                    current_post: int,
-                   update_posts_quantity: bool):
+                   update_posts_quantity: bool,
+                   post_quantity_func: Coroutine):
 
         if cls.get_data(state=state, key=cls.POSTS_QUANTITY, default=False) is False or update_posts_quantity is True:
-            posts_quantity = await Post.get_user_posts_quantity(
-                user_id=state.user
-            )
+            posts_quantity = await post_quantity_func
             await cls.set_data(
                 state=state,
                 data={cls.POSTS_QUANTITY: posts_quantity}

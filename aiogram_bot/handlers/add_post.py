@@ -8,7 +8,8 @@ from bot import dp
 from handlers.start import start
 from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard
 from keyboads.start import StartKeyboard
-from templates.posts import POST_EXPLANATION_MESSAGE
+
+from templates import render_template
 from utils.exceptions import AudioMixedError, DocumentMixedError
 from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message
 from utils.post_add_proxy import init_post_proxy, get_post_from_proxy
@@ -18,8 +19,10 @@ from utils.post_add_proxy import init_post_proxy, get_post_from_proxy
 async def suggest_post(message: Message, state: FSMContext):
     await AddPost.set_post.set()
     await init_post_proxy(state=state)
+
+    message_text = render_template(template_name="post_explain.jinja2")
     await message.answer(
-        text=POST_EXPLANATION_MESSAGE,
+        text=message_text,
         reply_markup=AddPostKeyboard()
     )
 
