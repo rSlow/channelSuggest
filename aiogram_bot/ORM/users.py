@@ -15,10 +15,10 @@ class User(Base):
     mention: Mapped[str] = mapped_column(nullable=True)
     active: Mapped[bool] = mapped_column(default=True)
 
-    dice: Mapped["Dice"] = relationship()
-    state: Mapped["UserState"] = relationship()
+    dice: Mapped["Dice"] = relationship(cascade="all, delete, delete-orphan")
+    state: Mapped["UserState"] = relationship(cascade="all, delete, delete-orphan")
 
-    queue_posts = relationship("Post", back_populates="user")
+    queue_posts = relationship("Post", back_populates="user", cascade="all, delete, delete-orphan")
 
     @classmethod
     async def add(cls, user_id: int, fullname: str, mention: str):

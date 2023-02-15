@@ -1,9 +1,9 @@
 import enum
 
 from aiogram.types import ContentType
-from sqlalchemy import ForeignKey, select, func, delete
+from sqlalchemy import ForeignKey, select, func, delete, update
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import mapped_column, Mapped, relationship, selectinload
+from sqlalchemy.orm import mapped_column, Mapped, relationship, selectinload, immediateload
 
 from ORM.base import Base, Session
 
@@ -22,7 +22,7 @@ MediaTypesList = [i.value for i in MediaTypes]
 class Post(Base):
     __tablename__ = "posts"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id"))
     user = relationship("User", back_populates="queue_posts")
 
@@ -77,7 +77,7 @@ class Post(Base):
                 await session.execute(query)
 
     @classmethod
-    async def get_post(cls, post_number: int):
+    async def get_all(cls, post_number: int):
         async with Session() as session:
             query = select(
                 cls
@@ -93,7 +93,7 @@ class Post(Base):
         return post
 
     @classmethod
-    async def get_posts_quantity(cls):
+    async def get_all_quantity(cls):
         async with Session() as session:
             query = select(
                 func.count()
@@ -106,6 +106,18 @@ class Post(Base):
             except NoResultFound:
                 posts_quantity = 0
         return posts_quantity
+
+    async def set_text(self, text: str):
+        async with Session() as session:
+            async with session.begin():
+                query = update(
+                    type(self)
+                ).filter_by(
+                    id=self.id
+                ).values(
+                    text=text
+                )
+                await session.execute(query)
 
 
 class Media(Base):

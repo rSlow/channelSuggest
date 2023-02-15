@@ -4,7 +4,7 @@ from aiogram.types import ContentType, Message
 
 from FSM.post_add import Start
 from bot import dp
-from handlers import start
+from handlers.start import start
 from ORM.users import Dice
 from keyboads.start import DiceKeyboard
 

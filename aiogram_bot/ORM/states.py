@@ -1,4 +1,4 @@
-from sqlalchemy import select, ForeignKey
+from sqlalchemy import select, ForeignKey, update
 from sqlalchemy.orm import Mapped, mapped_column
 from ORM.base import Base, Session
 
@@ -16,14 +16,14 @@ class UserState(Base):
                         state: bytes | str):
         async with Session() as session:
             async with session.begin():
-                query = select(
+                query = update(
                     cls
                 ).filter_by(
                     user_id=user_id
+                ).values(
+                    state=state
                 )
-                result = await session.execute(query)
-                user: cls = result.scalars().one()
-                user.state = state
+                await session.execute(query)
 
     @classmethod
     async def get_all_states(cls):

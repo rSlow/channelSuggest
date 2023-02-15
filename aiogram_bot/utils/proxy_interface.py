@@ -12,7 +12,7 @@ class ProxyInterface:
     CURRENT_VIEW_POST = "current_view_post"
 
     @staticmethod
-    async def get_data(state: FSMContext, key: str, default: Any = None):
+    async def _get_data(state: FSMContext, key: str, default: Any = None):
         data = await state.get_data()
         try:
             value: Any = data[key]
@@ -36,7 +36,7 @@ class ProxyInterface:
                    update_posts_quantity: bool,
                    post_quantity_func: Coroutine):
 
-        if cls.get_data(state=state, key=cls.POSTS_QUANTITY, default=False) is False or update_posts_quantity is True:
+        if await cls._get_data(state=state, key=cls.POSTS_QUANTITY, default=False) is False or update_posts_quantity is True:
             posts_quantity = await post_quantity_func
             await cls.set_data(
                 state=state,
@@ -48,15 +48,15 @@ class ProxyInterface:
         )
 
     @classmethod
-    async def get_posts_quantity(cls, state: FSMContext):
-        return await cls.get_data(
+    async def get_posts_quantity(cls, state: FSMContext) -> int:
+        return await cls._get_data(
             state=state,
             key=cls.POSTS_QUANTITY
         )
 
     @classmethod
-    async def get_current_post_number(cls, state: FSMContext):
-        return await cls.get_data(
+    async def get_current_post_number(cls, state: FSMContext) -> int:
+        return await cls._get_data(
             state=state,
             key=cls.CURRENT_VIEW_POST
         )
@@ -69,8 +69,8 @@ class ProxyInterface:
         )
 
     @classmethod
-    async def get_post(cls, state: FSMContext):
-        return await cls.get_data(
+    async def get_post(cls, state: FSMContext) -> Post:
+        return await cls._get_data(
             state=state,
             key=cls.VIEW_POST
         )
@@ -80,3 +80,11 @@ class ProxyAdminInterface(ProxyInterface):
     VIEW_POST = "view_admin_post"
     POSTS_QUANTITY = "admin_posts_quantity"
     CURRENT_VIEW_POST = "admin_current_view_post"
+
+    @classmethod
+    async def get_post_text(cls, state: FSMContext) -> str:
+        post: Post = await cls._get_data(
+            state=state,
+            key=cls.VIEW_POST
+        )
+        return post.text

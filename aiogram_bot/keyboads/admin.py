@@ -1,35 +1,28 @@
 from aiogram.types import ReplyKeyboardMarkup
 
-from .base import BaseKeyboard
+from keyboads.base import BaseKeyboard
 
 
-class AddPostKeyboard(BaseKeyboard):
+class AdminEditPostTextKeyboard(BaseKeyboard):
     class Buttons:
-        view = "Предпросмотр ➡"
-
-    buttons_list = [
-        Buttons.view,
-    ]
-
-
-class ConfirmPostKeyboard(BaseKeyboard):
-    class Buttons:
-        yes = "Да ✅"
-        no = "Нет ❌"
+        get_text = "Сообщение с текстом"
+        decline = "Отмена"
 
     add_on_main_button = False
 
     buttons_list = [
-        Buttons.yes,
-        Buttons.no,
+        Buttons.get_text,
+        Buttons.decline
     ]
 
 
-class UserPostKeyboard(ReplyKeyboardMarkup):
+class AdminPostKeyboard(ReplyKeyboardMarkup):
     class Buttons:
         next = ">"
         previous = "<"
-        delete = "Удалить 🗑"
+        edit = "Редактировать ✏"
+        accept = "Опубликовать ✅"
+        decline = "Отклонить ❌"
         on_main = BaseKeyboard.on_main_button
 
     def __init__(self, posts_quantity: int, current_post_number: int, *args, **kwargs):
@@ -41,5 +34,8 @@ class UserPostKeyboard(ReplyKeyboardMarkup):
         if current_post_number < posts_quantity:
             self.insert(self.Buttons.next)
 
-        self.row(self.Buttons.delete)
+        self.row(self.Buttons.accept)
+        self.insert(self.Buttons.decline)
+
+        self.row(self.Buttons.edit)
         self.insert(self.Buttons.on_main)

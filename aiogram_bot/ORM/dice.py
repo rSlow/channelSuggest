@@ -1,10 +1,17 @@
-from sqlalchemy import select, ForeignKey
+from sqlalchemy import select, ForeignKey, update
 from sqlalchemy.orm import Mapped, mapped_column
 from ORM.base import Base, Session
 
 
 class Dice(Base):
     __tablename__ = "dice"
+    GAMES = [
+        "cube",
+        "darts",
+        "football",
+        "basketball",
+        "casino"
+    ]
 
     id: Mapped[int] = mapped_column(primary_key=True)
     telegram_user_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id"))
@@ -16,46 +23,32 @@ class Dice(Base):
     casino: Mapped[int] = mapped_column(default=0)
 
     @classmethod
-    async def play_cube(cls, user_id):
+    async def _play_game(cls, user_id, game: str):
+        if game not in cls.GAMES:
+            raise TypeError(f"game {game} is not available")
+
         async with Session() as session:
-            query = select(cls).filter_by(telegram_user_id=user_id)
-            result = await session.execute(query)
-            stats: cls = result.scalars().one()
-            stats.cube += 1
-            await session.commit()
+            async with session.begin():
+                game_subquery = select(cls.cube).filter_by(telegram_user_id=user_id).scalar_subquery()
+                query = update(cls).filter_by(telegram_user_id=user_id).values(**{game: game_subquery})
+                await session.execute(query)
+
+    @classmethod
+    async def play_cube(cls, user_id):
+        await cls._play_game(user_id=user_id, game="cube")
 
     @classmethod
     async def play_darts(cls, user_id):
-        async with Session() as session:
-            query = select(cls).filter_by(telegram_user_id=user_id)
-            result = await session.execute(query)
-            stats: cls = result.scalars().one()
-            stats.darts += 1
-            await session.commit()
+        await cls._play_game(user_id=user_id, game="darts")
 
     @classmethod
     async def play_football(cls, user_id):
-        async with Session() as session:
-            query = select(cls).filter_by(telegram_user_id=user_id)
-            result = await session.execute(query)
-            stats: cls = result.scalars().one()
-            stats.football += 1
-            await session.commit()
+        await cls._play_game(user_id=user_id, game="football")
 
     @classmethod
     async def play_basketball(cls, user_id):
-        async with Session() as session:
-            query = select(cls).filter_by(telegram_user_id=user_id)
-            result = await session.execute(query)
-            stats: cls = result.scalars().one()
-            stats.basketball += 1
-            await session.commit()
+        await cls._play_game(user_id=user_id, game="basketball")
 
     @classmethod
     async def play_casino(cls, user_id):
-        async with Session() as session:
-            query = select(cls).filter_by(telegram_user_id=user_id)
-            result = await session.execute(query)
-            stats: cls = result.scalars().one()
-            stats.casino += 1
-            await session.commit()
+        await cls._play_game(user_id=user_id, game="casino")
