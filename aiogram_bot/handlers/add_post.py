@@ -49,7 +49,7 @@ async def preview_post(message: Message, state: FSMContext):
 
         else:
             try:
-                post_message = await compile_post_message(post=post)
+                post_message = compile_post_message(post=post)
                 await message.answer_media_group(
                     media=post_message
                 )
@@ -69,7 +69,7 @@ async def preview_post(message: Message, state: FSMContext):
                 )
 
 
-# "it should be upper, but button of keyboard will be checked as text of media"
+# it should be upper, but button of keyboard will be checked as text of media
 @dp.message_handler(content_types=MediaTypesList, state=AddPost.set_post)
 async def accept_media(message: Message, state: FSMContext):
     file_id, text, content_type = await parse_message(message=message)

@@ -6,7 +6,7 @@ from FSM.post_add import Start
 from FSM.post_admin_view import PostAdminView
 from ORM.posts import Post
 
-from bot import dp, bot
+from bot import dp
 from handlers.start import start
 from handlers.unregistered import delete_center_button_message
 from keyboads.admin import AdminPostKeyboard, AdminEditPostTextKeyboard
@@ -16,10 +16,11 @@ from utils.admin import admin_required
 from utils.messages import view_message_delete
 from utils.post_processors import compile_post_message
 from utils.proxy_interface import ProxyAdminInterface
+from utils.sender import send_post
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.admin_posts), state=Start.start)
-@admin_required(admins_list=bot.admins)
+@admin_required(admins_list=dp.bot.admins)
 async def view_admin_suggest_post(message: Message,
                                   state: FSMContext,
                                   post_number: int = 1,
@@ -56,7 +57,7 @@ async def view_admin_suggest_post(message: Message,
                 text=post.text
             )
         else:
-            post_message = await compile_post_message(
+            post_message = compile_post_message(
                 post=post
             )
             await message.answer_media_group(
@@ -115,7 +116,7 @@ async def get_next_post(message: Message, state: FSMContext):
 
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.edit), state=PostAdminView.view)
-async def start_edit_post_text(message: Message, state: FSMContext):
+async def start_edit_post_text(message: Message):
     await PostAdminView.edit_text.set()
 
     text_block = render_template(template_name="post_text_edit.jinja2")
@@ -160,9 +161,32 @@ async def accept_edit_post_text(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.accept), state=PostAdminView.view)
 async def accept_post(message: Message, state: FSMContext):
-    pass
+    post = await ProxyAdminInterface.get_post(state=state)
+    await send_post(post=post)
+    await post.delete()
+
+    await message.answer("Пост опубликован.")
+
+    current_post_number = await ProxyAdminInterface.get_current_post_number(state=state)
+    await view_admin_suggest_post(
+        message=message,
+        state=state,
+        post_number=current_post_number,
+        update_posts_quantity=True
+    )
 
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.decline), state=PostAdminView.view)
 async def decline_post(message: Message, state: FSMContext):
-    pass
+    post = await ProxyAdminInterface.get_post(state=state)
+    await post.delete()
+
+    await message.answer("Пост отклонён.")
+
+    current_post_number = await ProxyAdminInterface.get_current_post_number(state=state)
+    await view_admin_suggest_post(
+        message=message,
+        state=state,
+        post_number=current_post_number,
+        update_posts_quantity=True
+    )

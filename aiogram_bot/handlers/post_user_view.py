@@ -55,7 +55,7 @@ async def view_user_post(message: Message,
                 )
             )
         else:
-            post_message = await compile_post_message(
+            post_message = compile_post_message(
                 post=user_post
             )
             await message.answer_media_group(
@@ -115,7 +115,7 @@ async def get_delete_post(message: Message, state: FSMContext):
     current_post = await ProxyInterface.get_post(
         state=state
     )
-    await Post.delete(current_post)
+    await current_post.delete()
     await view_user_post(
         message=message,
         state=state,

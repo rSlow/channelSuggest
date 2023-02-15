@@ -71,7 +71,7 @@ async def set_data_in_post_proxy(
         await add_media_to_post(file_id=file_id, media_type=content_type, state=state)
 
 
-async def compile_post_message(post: Post):
+def compile_post_message(post: Post):
     media_types_in_post = set([media.media_type for media in post.medias if media.media_type is not None])
     if MediaTypes.document.value in media_types_in_post and len(media_types_in_post) > 1:
         raise DocumentMixedError

@@ -1,9 +1,9 @@
 import enum
 
 from aiogram.types import ContentType
-from sqlalchemy import ForeignKey, select, func, delete, update
+from sqlalchemy import ForeignKey, select, func, update
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import mapped_column, Mapped, relationship, selectinload, immediateload
+from sqlalchemy.orm import mapped_column, Mapped, relationship, selectinload
 
 from ORM.base import Base, Session
 
@@ -28,7 +28,9 @@ class Post(Base):
 
     text: Mapped[str] = mapped_column(nullable=True)
     medias: Mapped[list["Media"]] = relationship(
-        cascade="all, delete, delete-orphan"
+        cascade="all, delete",
+        passive_deletes=True,
+
     )
 
     async def add(self):
@@ -69,12 +71,10 @@ class Post(Base):
                 posts_quantity = 0
         return posts_quantity
 
-    @classmethod
-    async def delete(cls, post):
+    async def delete(self):
         async with Session() as session:
             async with session.begin():
-                query = delete(cls).filter_by(id=post.id)
-                await session.execute(query)
+                await session.delete(self)
 
     @classmethod
     async def get_all(cls, post_number: int):
