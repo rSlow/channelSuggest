@@ -3,7 +3,7 @@ from aiogram.types import ContentType, Message, MediaGroup
 
 from ORM.posts import Post, MediaTypes, Media
 from utils.exceptions import MediaTypeError, DocumentMixedError, AudioMixedError
-from utils.post_add_proxy import add_text_to_post, add_media_to_post
+from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
 class PostMediaGroup(MediaGroup):
@@ -57,18 +57,6 @@ async def parse_message(message: Message):
         text = None
     content_type = message.content_type
     return file_id, text, content_type
-
-
-async def set_data_in_post_proxy(
-        file_id: str | None,
-        text: str | None,
-        content_type: str,
-        state: FSMContext
-):
-    if text is not None:
-        await add_text_to_post(text=text, state=state)
-    if file_id is not None:
-        await add_media_to_post(file_id=file_id, media_type=content_type, state=state)
 
 
 def compile_post_message(post: Post):

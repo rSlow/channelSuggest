@@ -8,15 +8,19 @@ class ModifiedMemoryStorage(MemoryStorage):
                         chat: str | int | None = None,
                         user: str | int | None = None,
                         state: bytes | str = None):
-        await super(ModifiedMemoryStorage, self).set_state(
-            chat=chat,
-            user=user,
-            state=state
+        current_state = await self.get_state(
+            chat=chat, user=user
         )
-        await UserState.set_state(
-            user_id=user,
-            state=state
-        )
+        if current_state != state:
+            await super(ModifiedMemoryStorage, self).set_state(
+                chat=chat,
+                user=user,
+                state=state
+            )
+            await UserState.set_state(
+                user_id=user,
+                state=state
+            )
 
     async def set_all_states(self):
         users = await UserState.get_all_states()

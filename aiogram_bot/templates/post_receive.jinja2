@@ -1,0 +1,20 @@
+{#
+Expected parameters:
+  - param post: Post ORM object
+  - media_annotations: dict[media_type, annotation]
+#}
+{{ post.medias|length + (post.text!=None) }} объект(ов) получено:
+
+{% if post.medias|length > 0 %}
+    {% for media_type, posts in  post.medias|groupby("media_type") %}
+        {% set type_annotation = media_annotations.get(media_type) %}
+        <br>
+        - {{ posts|length }} {{ type_annotation }}
+    {% endfor %}
+    {% if post.text %}
+        <br>
+        - описание
+    {% endif %}
+{% else %}
+    <br> - текст
+{% endif %}

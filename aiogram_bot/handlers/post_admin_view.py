@@ -15,7 +15,7 @@ from templates import render_template
 from utils.admin import admin_required
 from utils.messages import view_message_delete
 from utils.post_processors import compile_post_message
-from utils.proxy_interface import ProxyAdminInterface
+from utils.proxy_interfaces.admin import AdminProxyInterface
 from utils.sender import send_post
 
 
@@ -27,13 +27,17 @@ async def view_admin_suggest_post(message: Message,
                                   current: bool = False,
                                   update_posts_quantity: bool = True):
     if not current:
-        await ProxyAdminInterface.init(
-            state=state,
-            current_post=post_number,
-            update_posts_quantity=update_posts_quantity,
-            post_quantity_func=Post.get_all_quantity()
-        )
-    posts_quantity = await ProxyAdminInterface.get_posts_quantity(
+        try:
+            await AdminProxyInterface.init(
+                state=state,
+                current_post=post_number,
+                update_posts_quantity=update_posts_quantity,
+                post_quantity_func=Post.get_all_quantity()
+            )
+        except RuntimeWarning:
+            pass
+
+    posts_quantity = await AdminProxyInterface.get_posts_quantity(
         state=state
     )
 
@@ -47,7 +51,7 @@ async def view_admin_suggest_post(message: Message,
         post = await Post.get_all(
             post_number=post_number
         )
-        await ProxyAdminInterface.set_post(
+        await AdminProxyInterface.set_post(
             state=state,
             post=post
         )
@@ -86,7 +90,7 @@ dp.register_message_handler(callback=delete_center_button_message, regexp=r"\d+\
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.previous), state=PostAdminView.view)
 async def get_previous_post(message: Message, state: FSMContext):
-    previous_post_number = await ProxyAdminInterface.get_current_post_number(state=state) - 1
+    previous_post_number = await AdminProxyInterface.get_current_post_number(state=state) - 1
 
     if previous_post_number == 0:
         await view_message_delete(message)
@@ -101,8 +105,8 @@ async def get_previous_post(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.next), state=PostAdminView.view)
 async def get_next_post(message: Message, state: FSMContext):
-    next_post_number = await ProxyAdminInterface.get_current_post_number(state=state) + 1
-    posts_quantity = await ProxyAdminInterface.get_posts_quantity(state=state)
+    next_post_number = await AdminProxyInterface.get_current_post_number(state=state) + 1
+    posts_quantity = await AdminProxyInterface.get_posts_quantity(state=state)
 
     if next_post_number > posts_quantity:
         await view_message_delete(message)
@@ -128,7 +132,7 @@ async def start_edit_post_text(message: Message):
 
 @dp.message_handler(Text(equals=AdminEditPostTextKeyboard.Buttons.get_text), state=PostAdminView.edit_text)
 async def get_post_text(message: Message, state: FSMContext):
-    post_text = await ProxyAdminInterface.get_post_text(state=state)
+    post_text = await AdminProxyInterface.get_post_text(state=state)
     await message.answer(
         text=f"<code>{post_text}</code>"
     )
@@ -146,8 +150,8 @@ async def decline_edit_post_text(message: Message, state: FSMContext):
 
 @dp.message_handler(content_types=ContentTypes.TEXT, state=PostAdminView.edit_text)
 async def accept_edit_post_text(message: Message, state: FSMContext):
-    current_post_number = await ProxyAdminInterface.get_current_post_number(state=state)
-    post = await ProxyAdminInterface.get_post(state=state)
+    current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
+    post = await AdminProxyInterface.get_post(state=state)
     await post.set_text(text=message.html_text)
 
     await message.answer(text="Текст изменен.")
@@ -161,13 +165,13 @@ async def accept_edit_post_text(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.accept), state=PostAdminView.view)
 async def accept_post(message: Message, state: FSMContext):
-    post = await ProxyAdminInterface.get_post(state=state)
+    post = await AdminProxyInterface.get_post(state=state)
     await send_post(post=post)
     await post.delete()
 
     await message.answer("Пост опубликован.")
 
-    current_post_number = await ProxyAdminInterface.get_current_post_number(state=state)
+    current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
     await view_admin_suggest_post(
         message=message,
         state=state,
@@ -178,12 +182,12 @@ async def accept_post(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.decline), state=PostAdminView.view)
 async def decline_post(message: Message, state: FSMContext):
-    post = await ProxyAdminInterface.get_post(state=state)
+    post = await AdminProxyInterface.get_post(state=state)
     await post.delete()
 
     await message.answer("Пост отклонён.")
 
-    current_post_number = await ProxyAdminInterface.get_current_post_number(state=state)
+    current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
     await view_admin_suggest_post(
         message=message,
         state=state,

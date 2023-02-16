@@ -1,33 +1,15 @@
 from collections.abc import Coroutine
-from typing import Any
 
 from aiogram.dispatcher import FSMContext
 
 from ORM.posts import Post
+from utils.proxy_interfaces.base import ProxyInterface
 
 
-class ProxyInterface:
+class ViewProxyInterface(ProxyInterface):
     VIEW_POST = "view_post"
     POSTS_QUANTITY = "posts_quantity"
     CURRENT_VIEW_POST = "current_view_post"
-
-    @staticmethod
-    async def _get_data(state: FSMContext, key: str, default: Any = None):
-        data = await state.get_data()
-        try:
-            value: Any = data[key]
-        except KeyError:
-            if default is not None:
-                value = default
-            else:
-                raise
-        return value
-
-    @staticmethod
-    async def set_data(state: FSMContext, data: dict):
-        new_data = await state.get_data()
-        new_data.update(data)
-        await state.set_data(data=new_data)
 
     @classmethod
     async def init(cls,
@@ -35,14 +17,14 @@ class ProxyInterface:
                    current_post: int,
                    update_posts_quantity: bool,
                    post_quantity_func: Coroutine):
-
-        if await cls._get_data(state=state, key=cls.POSTS_QUANTITY, default=False) is False or update_posts_quantity is True:
+        if await cls._get_data(state=state, key=cls.POSTS_QUANTITY,
+                               default=False) is False or update_posts_quantity is True:
             posts_quantity = await post_quantity_func
-            await cls.set_data(
+            await cls._set_data(
                 state=state,
                 data={cls.POSTS_QUANTITY: posts_quantity}
             )
-        await cls.set_data(
+        await cls._set_data(
             state=state,
             data={cls.CURRENT_VIEW_POST: current_post}
         )
@@ -63,7 +45,7 @@ class ProxyInterface:
 
     @classmethod
     async def set_post(cls, state: FSMContext, post: Post):
-        await cls.set_data(
+        await cls._set_data(
             state=state,
             data={cls.VIEW_POST: post}
         )
@@ -74,17 +56,3 @@ class ProxyInterface:
             state=state,
             key=cls.VIEW_POST
         )
-
-
-class ProxyAdminInterface(ProxyInterface):
-    VIEW_POST = "view_admin_post"
-    POSTS_QUANTITY = "admin_posts_quantity"
-    CURRENT_VIEW_POST = "admin_current_view_post"
-
-    @classmethod
-    async def get_post_text(cls, state: FSMContext) -> str:
-        post: Post = await cls._get_data(
-            state=state,
-            key=cls.VIEW_POST
-        )
-        return post.text

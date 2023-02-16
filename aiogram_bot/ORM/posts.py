@@ -18,6 +18,13 @@ class MediaTypes(enum.Enum):
 
 MediaTypesList = [i.value for i in MediaTypes]
 
+media_annotations = {
+    MediaTypes.audio.value: "аудио",
+    MediaTypes.video.value: "видео",
+    MediaTypes.document.value: "документ",
+    MediaTypes.photo.value: "фото"
+}
+
 
 class Post(Base):
     __tablename__ = "posts"

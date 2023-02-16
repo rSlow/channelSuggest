@@ -10,15 +10,16 @@ from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard
 from keyboads.start import StartKeyboard
 
 from templates import render_template
-from utils.exceptions import AudioMixedError, DocumentMixedError
-from utils.post_processors import parse_message, set_data_in_post_proxy, compile_post_message
-from utils.post_add_proxy import init_post_proxy, get_post_from_proxy
+from utils.exceptions import AudioMixedError, DocumentMixedError, TooMuchMediaError
+from utils.messages import get_add_content_message
+from utils.post_processors import parse_message, compile_post_message
+from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)
 async def suggest_post(message: Message, state: FSMContext):
     await AddPost.set_post.set()
-    await init_post_proxy(state=state)
+    await PostAddProxyInterface.init(state=state)
 
     message_text = render_template(template_name="post_explain.jinja2")
     await message.answer(
@@ -29,7 +30,7 @@ async def suggest_post(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=AddPostKeyboard.Buttons.view), state=AddPost.set_post)
 async def preview_post(message: Message, state: FSMContext):
-    post = await get_post_from_proxy(state)
+    post = await PostAddProxyInterface.get_post(state)
 
     if not post.text and not post.medias:
         await message.answer(
@@ -57,15 +58,11 @@ async def preview_post(message: Message, state: FSMContext):
                     text="Отправляем пост?",
                     reply_markup=ConfirmPostKeyboard()
                 )
-            except AudioMixedError:
+            except (AudioMixedError, DocumentMixedError):
                 await start(
                     message=message,
-                    answer="Аудио не может быть прикреплено совместно с другими видами медиафайлов. Пост отклонен."
-                )
-            except DocumentMixedError:
-                await start(
-                    message=message,
-                    answer="Документ не может быть прикреплен совместно с другими видами медиафайлов. Пост отклонен."
+                    answer=f"Аудио или документы не может быть прикреплены совместно "
+                           f"с другими видами медиафайлов. Пост отклонен."
                 )
 
 
@@ -73,20 +70,33 @@ async def preview_post(message: Message, state: FSMContext):
 @dp.message_handler(content_types=MediaTypesList, state=AddPost.set_post)
 async def accept_media(message: Message, state: FSMContext):
     file_id, text, content_type = await parse_message(message=message)
-    await set_data_in_post_proxy(
-        file_id=file_id,
-        text=text,
-        content_type=content_type,
-        state=state
-    )
     await message.delete()
+    try:
+        await PostAddProxyInterface.set_post_data(
+            file_id=file_id,
+            text=text,
+            content_type=content_type,
+            state=state
+        )
+        add_content_message_text = await get_add_content_message(state=state)
+        await PostAddProxyInterface.send_explain_message(state=state, text=add_content_message_text)
+
+    except TooMuchMediaError:
+        PostAddProxyInterface.CHECKING = False
+        if PostAddProxyInterface.EXPLAIN_MESSAGE is not None:
+            await PostAddProxyInterface.EXPLAIN_MESSAGE.delete()
+
+        await start(
+            message=message,
+            answer=f"Было прикреплено более 10 медиафайлов. Возможно прикрепление только до 10 файлов. Пост отклонен."
+        )
 
 
 @dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.no), state=AddPost.confirm_post)
 @dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.yes), state=AddPost.confirm_post)
 async def confirm_post(message: Message, state: FSMContext):
     if message.text == ConfirmPostKeyboard.Buttons.yes:
-        post = await get_post_from_proxy(state)
+        post = await PostAddProxyInterface.get_post(state)
         await post.add()
 
         await start(

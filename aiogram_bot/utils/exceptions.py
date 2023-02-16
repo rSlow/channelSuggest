@@ -9,3 +9,7 @@ class AudioMixedError(TypeError):
 
 class DocumentMixedError(TypeError):
     pass
+
+
+class TooMuchMediaError(RuntimeError):
+    pass
