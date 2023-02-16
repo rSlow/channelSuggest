@@ -1,6 +1,7 @@
 import asyncio
 
 from aiogram.dispatcher import FSMContext
+from aiogram.types import Message
 
 from ORM.posts import Post, MediaTypesList, Media
 from bot import bot
@@ -11,10 +12,23 @@ from utils.proxy_interfaces.base import ProxyInterface
 class PostAddProxyInterface(ProxyInterface):
     POST = "post"
 
-    EXPLAIN_MESSAGE_TEXT: str | None = None
-    EXPLAIN_MESSAGE = None
-    ALLOWED_SEND_EXPLAIN_MESSAGE = False
-    CHECKING = False
+    POST_ADD_KW = {}
+    EXPLAIN_MESSAGE_TEXT = "explain_message_text"
+    EXPLAIN_MESSAGE = "explain_message"
+    ALLOW_SEND_EXPLAIN_MESSAGE = "allow_send_explain_message"
+    CHECKING = "checking"
+
+    @classmethod
+    def get_checking(cls, user_id: int) -> bool:
+        return cls.POST_ADD_KW[user_id][cls.CHECKING]
+
+    @classmethod
+    def set_checking(cls, user_id: int, flag: bool):
+        cls.POST_ADD_KW[user_id][cls.CHECKING] = flag
+
+    @classmethod
+    def get_explain_message(cls, user_id: int) -> Message:
+        return cls.POST_ADD_KW[user_id][cls.EXPLAIN_MESSAGE]
 
     @classmethod
     async def init(cls, state: FSMContext):
@@ -22,16 +36,20 @@ class PostAddProxyInterface(ProxyInterface):
             state=state,
             data={
                 cls.POST: Post(user_id=state.user),
-                cls.EXPLAIN_MESSAGE_TEXT: None
             }
         )
+        cls.POST_ADD_KW[state.user] = {
+            cls.EXPLAIN_MESSAGE_TEXT: None,
+            cls.EXPLAIN_MESSAGE: None,
+            cls.ALLOW_SEND_EXPLAIN_MESSAGE: False,
+            cls.CHECKING: False
+        }
 
     @classmethod
     async def add_text(cls, text: str, state: FSMContext):
         async with state.proxy() as data:
             post: Post = data[cls.POST]
-            if post.text is None:
-                post.text = text
+            post.text = text
 
     @classmethod
     async def add_media(cls, file_id: str, media_type: str, state: FSMContext):
@@ -40,12 +58,11 @@ class PostAddProxyInterface(ProxyInterface):
         else:
             async with state.proxy() as data:
                 post: Post = data[cls.POST]
+                post.medias.append(
+                    Media(file_id=file_id, media_type=media_type)
+                )
                 if len(post.medias) > 10:
                     raise TooMuchMediaError
-                else:
-                    post.medias.append(
-                        Media(file_id=file_id, media_type=media_type)
-                    )
 
     @classmethod
     async def set_post_data(cls,
@@ -62,28 +79,32 @@ class PostAddProxyInterface(ProxyInterface):
     async def get_post(cls, state: FSMContext) -> Post:
         return await cls._get_data(state=state, key=cls.POST)
 
+    ##################
+
     @classmethod
     async def send_explain_message(cls, state: FSMContext, text: str):
-        cls.CHECKING = True
-        while cls.CHECKING:
-            if cls.ALLOWED_SEND_EXPLAIN_MESSAGE:
-                cls.CHECKING = False
+        user_data = cls.POST_ADD_KW[state.user]
+        user_data[cls.CHECKING] = True
 
-                explain_message_text = cls.EXPLAIN_MESSAGE_TEXT
+        while user_data[cls.CHECKING]:
+            if user_data[cls.ALLOW_SEND_EXPLAIN_MESSAGE]:
+
+                user_data[cls.CHECKING] = False
+                user_data[cls.ALLOW_SEND_EXPLAIN_MESSAGE] = False
+
                 explain_message = await bot.send_message(
                     chat_id=state.chat,
-                    text=explain_message_text
+                    text=user_data[cls.EXPLAIN_MESSAGE_TEXT]
                 )
-                if cls.EXPLAIN_MESSAGE is not None:
-                    await cls.EXPLAIN_MESSAGE.delete()
-                cls.EXPLAIN_MESSAGE = explain_message
 
-                cls.ALLOWED_SEND_EXPLAIN_MESSAGE = False
+                if user_data[cls.EXPLAIN_MESSAGE] is not None:
+                    await user_data[cls.EXPLAIN_MESSAGE].delete()
+                user_data[cls.EXPLAIN_MESSAGE] = explain_message
 
                 break
 
             else:
-                cls.EXPLAIN_MESSAGE_TEXT = text
+                user_data[cls.EXPLAIN_MESSAGE_TEXT] = text
                 await asyncio.sleep(1)
-                if cls.CHECKING:
-                    cls.ALLOWED_SEND_EXPLAIN_MESSAGE = True
+                if user_data[cls.CHECKING]:
+                    user_data[cls.ALLOW_SEND_EXPLAIN_MESSAGE] = True

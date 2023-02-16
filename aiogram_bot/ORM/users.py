@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ORM.base import Base, Session
 from ORM.dice import Dice
+from ORM.posts import Post
 from ORM.states import UserState
 
 
@@ -17,7 +18,7 @@ class User(Base):
     dice: Mapped["Dice"] = relationship(cascade="all, delete, delete-orphan")
     state: Mapped["UserState"] = relationship(cascade="all, delete, delete-orphan")
 
-    queue_posts = relationship("Post", back_populates="user", cascade="all, delete, delete-orphan")
+    queue_posts: Mapped[list["Post"]] = relationship(back_populates="user", cascade="all, delete, delete-orphan")
 
     @classmethod
     async def add(cls, user_id: int, fullname: str, mention: str):

@@ -17,11 +17,14 @@ from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)
-async def suggest_post(message: Message, state: FSMContext):
+async def suggest_post(message: Message, state: FSMContext, new: bool = True):
     await AddPost.set_post.set()
-    await PostAddProxyInterface.init(state=state)
+    if new is True:
+        await PostAddProxyInterface.init(state=state)
+        message_text = render_template(template_name="post_explain.jinja2")
+    else:
+        message_text = "Ожидаю еще данные для поста..."
 
-    message_text = render_template(template_name="post_explain.jinja2")
     await message.answer(
         text=message_text,
         reply_markup=AddPostKeyboard()
@@ -45,7 +48,7 @@ async def preview_post(message: Message, state: FSMContext):
             )
             await message.answer(
                 text="Отправляем пост?",
-                reply_markup=ConfirmPostKeyboard()
+                reply_markup=ConfirmPostKeyboard(post=post)
             )
 
         else:
@@ -56,7 +59,7 @@ async def preview_post(message: Message, state: FSMContext):
                 )
                 await message.answer(
                     text="Отправляем пост?",
-                    reply_markup=ConfirmPostKeyboard()
+                    reply_markup=ConfirmPostKeyboard(post=post)
                 )
             except (AudioMixedError, DocumentMixedError):
                 await start(
@@ -82,14 +85,25 @@ async def accept_media(message: Message, state: FSMContext):
         await PostAddProxyInterface.send_explain_message(state=state, text=add_content_message_text)
 
     except TooMuchMediaError:
-        PostAddProxyInterface.CHECKING = False
-        if PostAddProxyInterface.EXPLAIN_MESSAGE is not None:
-            await PostAddProxyInterface.EXPLAIN_MESSAGE.delete()
+        PostAddProxyInterface.set_checking(user_id=state.user, flag=False)
+        explain_message = PostAddProxyInterface.get_explain_message(user_id=state.user)
+        if explain_message is not None:
+            await explain_message.delete()
 
         await start(
             message=message,
             answer=f"Было прикреплено более 10 медиафайлов. Возможно прикрепление только до 10 файлов. Пост отклонен."
         )
+
+
+@dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.edit_text), state=AddPost.confirm_post)
+async def edit_post(message: Message, state: FSMContext):
+    await AddPost.set_post.set()
+    await suggest_post(
+        message=message,
+        state=state,
+        new=False
+    )
 
 
 @dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.no), state=AddPost.confirm_post)

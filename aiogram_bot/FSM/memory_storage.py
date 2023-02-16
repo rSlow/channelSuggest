@@ -17,10 +17,11 @@ class ModifiedMemoryStorage(MemoryStorage):
                 user=user,
                 state=state
             )
-            await UserState.set_state(
-                user_id=user,
-                state=state
-            )
+            if current_state is not None:
+                await UserState.set_state(
+                    user_id=user,
+                    state=state
+                )
 
     async def set_all_states(self):
         users = await UserState.get_all_states()
