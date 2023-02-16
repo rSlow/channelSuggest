@@ -1,36 +1,34 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
-from aiogram.types import Message
+from aiogram.types import Message, ContentTypes
 
 from FSM.post_add import Start, AddPost
 from ORM.posts import MediaTypesList
 from bot import dp
 from handlers.start import start
-from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard
+from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard, DeleteMediasKeyboard, EditTextKeyboard
 from keyboads.start import StartKeyboard
 
 from templates import render_template
 from utils.exceptions import AudioMixedError, DocumentMixedError, TooMuchMediaError
-from utils.messages import get_add_content_message
+from utils.messages import get_add_content_message, get_media_number
 from utils.post_processors import parse_message, compile_post_message
 from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
 @dp.message_handler(Text(equals=StartKeyboard.Buttons.suggest), state=Start.start)
-async def suggest_post(message: Message, state: FSMContext, new: bool = True):
+async def suggest_post(message: Message, state: FSMContext):
     await AddPost.set_post.set()
-    if new is True:
-        await PostAddProxyInterface.init(state=state)
-        message_text = render_template(template_name="post_explain.jinja2")
-    else:
-        message_text = "Ожидаю еще данные для поста..."
-
+    await PostAddProxyInterface.init(state=state)
+    message_text = render_template(template_name="post_explain.jinja2")
     await message.answer(
         text=message_text,
         reply_markup=AddPostKeyboard()
     )
 
 
+@dp.message_handler(Text(equals=EditTextKeyboard.Buttons.to_post), state=AddPost.edit_text)
+@dp.message_handler(Text(equals=DeleteMediasKeyboard.Buttons.to_post), state=AddPost.del_medias)
 @dp.message_handler(Text(equals=AddPostKeyboard.Buttons.view), state=AddPost.set_post)
 async def preview_post(message: Message, state: FSMContext):
     post = await PostAddProxyInterface.get_post(state)
@@ -97,13 +95,66 @@ async def accept_media(message: Message, state: FSMContext):
 
 
 @dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.edit_text), state=AddPost.confirm_post)
-async def edit_post(message: Message, state: FSMContext):
-    await AddPost.set_post.set()
-    await suggest_post(
-        message=message,
-        state=state,
-        new=False
+async def edit_text(message: Message):
+    await AddPost.edit_text.set()
+    await message.answer(
+        text=f"Ожидаю новый текст. Старый текст можно получить, нажав на кнопку "
+             f"<pre>{EditTextKeyboard.Buttons.get_text}</pre>",
+        reply_markup=EditTextKeyboard()
     )
+
+
+@dp.message_handler(Text(equals=EditTextKeyboard.Buttons.get_text), state=AddPost.edit_text)
+async def get_text(message: Message, state: FSMContext):
+    post_text = await PostAddProxyInterface.get_text(state=state)
+    await message.answer(text=post_text)
+
+
+@dp.message_handler(content_types=ContentTypes.TEXT, state=AddPost.edit_text)
+async def receive_new_text(message: Message, state: FSMContext):
+    await PostAddProxyInterface.set_text(
+        text=message.html_text,
+        state=state
+    )
+    await preview_post(
+        message=message,
+        state=state
+    )
+
+
+@dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.del_medias), state=AddPost.confirm_post)
+async def delete_media_menu(message: Message, state: FSMContext, send_post_message: bool = False):
+    await AddPost.del_medias.set()
+    post = await PostAddProxyInterface.get_post(state=state)
+    if send_post_message:
+        await message.answer_media_group(
+            media=compile_post_message(
+                post=post,
+                with_caption=False
+            ),
+        )
+    await message.answer(
+        text="Выберите фото для удаления:",
+        reply_markup=DeleteMediasKeyboard(post=post)
+    )
+
+
+@dp.message_handler(regexp=r".+ [(]№\d+[)]", state=AddPost.del_medias)
+async def delete_media(message: Message, state: FSMContext):
+    media_number = get_media_number(text=message.text)
+    await PostAddProxyInterface.delete_media(state=state, index=media_number - 1)
+    updated_post = await PostAddProxyInterface.get_post(state=state)
+    if updated_post.medias:
+        await delete_media_menu(
+            message=message,
+            state=state,
+            send_post_message=True
+        )
+    else:
+        await preview_post(
+            message=message,
+            state=state
+        )
 
 
 @dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.no), state=AddPost.confirm_post)

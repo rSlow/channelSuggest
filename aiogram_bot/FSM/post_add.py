@@ -9,3 +9,5 @@ class Start(StatesGroup):
 class AddPost(StatesGroup):
     set_post = State()
     confirm_post = State()
+    edit_text = State()
+    del_medias = State()

@@ -27,3 +27,8 @@ async def get_add_content_message(state: FSMContext):
             "media_annotations": media_annotations
         }
     )
+
+
+def get_media_number(text: str):
+    _, second_block = text.split()
+    return int(second_block[2:-1])

@@ -46,10 +46,16 @@ class PostAddProxyInterface(ProxyInterface):
         }
 
     @classmethod
-    async def add_text(cls, text: str, state: FSMContext):
+    async def set_text(cls, text: str, state: FSMContext):
         async with state.proxy() as data:
             post: Post = data[cls.POST]
             post.text = text
+
+    @classmethod
+    async def get_text(cls, state: FSMContext) -> str:
+        async with state.proxy() as data:
+            post: Post = data[cls.POST]
+            return post.text
 
     @classmethod
     async def add_media(cls, file_id: str, media_type: str, state: FSMContext):
@@ -71,13 +77,21 @@ class PostAddProxyInterface(ProxyInterface):
                             content_type: str,
                             state: FSMContext):
         if text is not None:
-            await cls.add_text(text=text, state=state)
+            await cls.set_text(text=text, state=state)
         if file_id is not None:
             await cls.add_media(file_id=file_id, media_type=content_type, state=state)
 
     @classmethod
     async def get_post(cls, state: FSMContext) -> Post:
         return await cls._get_data(state=state, key=cls.POST)
+
+    @classmethod
+    async def delete_media(cls, state: FSMContext, index: int):
+        async with state.proxy() as data:
+            post = data[cls.POST]
+            medias_list: list = post.medias[:]
+            medias_list.pop(index)
+            post.medias = medias_list
 
     ##################
 

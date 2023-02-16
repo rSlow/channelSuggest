@@ -57,7 +57,11 @@ class UserPostKeyboard(ReplyKeyboardMarkup):
         self.insert(self.Buttons.on_main)
 
 
-class DeletePhotosKeyboard(ReplyKeyboardMarkup):
+class DeleteMediasKeyboard(ReplyKeyboardMarkup):
+    class Buttons:
+        to_post = "Назад к посту 🔙"
+        on_main = BaseKeyboard.on_main_button
+
     def __init__(self, post: Post, *args, **kwargs):
         super().__init__(resize_keyboard=True, *args, **kwargs)
 
@@ -75,3 +79,17 @@ class DeletePhotosKeyboard(ReplyKeyboardMarkup):
                     raise MediaTypeError(media_type=media.media_type)
 
             self.insert(f"{desc} (№{num})")
+
+        self.insert(self.Buttons.to_post)
+        self.insert(self.Buttons.on_main)
+
+
+class EditTextKeyboard(BaseKeyboard):
+    class Buttons:
+        get_text = "Получить текст 📜"
+        to_post = "Назад к посту 🔙"
+
+    buttons_list = [
+        Buttons.get_text,
+        Buttons.to_post,
+    ]

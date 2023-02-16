@@ -57,7 +57,7 @@ async def parse_message(message: Message):
     return file_id, text, content_type
 
 
-def compile_post_message(post: Post):
+def compile_post_message(post: Post, with_caption: bool = True):
     media_types_in_post = set([media.media_type for media in post.medias if media.media_type is not None])
     if MediaTypes.document.value in media_types_in_post and len(media_types_in_post) > 1:
         raise DocumentMixedError
@@ -68,7 +68,7 @@ def compile_post_message(post: Post):
     first_media: "Media" = post.medias[0]
     media_group.attach_media(
         media=first_media,
-        caption=post.text
+        caption=post.text if with_caption is True else None
     )
 
     for media in post.medias[1:]:
