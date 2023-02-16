@@ -2,7 +2,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ORM.base import Base, Session
 from ORM.dice import Dice
-from ORM.posts import Post
 from ORM.states import UserState
 
 

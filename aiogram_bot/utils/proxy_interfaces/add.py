@@ -1,9 +1,6 @@
 import asyncio
-from dataclasses import dataclass
 
 from aiogram.dispatcher import FSMContext
-from aiogram.types import Message
-from aiogram.utils.exceptions import MessageToDeleteNotFound
 
 from ORM.posts import Post, MediaTypesList, Media
 from bot import bot

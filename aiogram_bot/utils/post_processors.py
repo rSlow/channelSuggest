@@ -1,9 +1,7 @@
-from aiogram.dispatcher import FSMContext
 from aiogram.types import ContentType, Message, MediaGroup
 
 from ORM.posts import Post, MediaTypes, Media
 from utils.exceptions import MediaTypeError, DocumentMixedError, AudioMixedError
-from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
 class PostMediaGroup(MediaGroup):
