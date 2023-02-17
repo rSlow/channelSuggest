@@ -122,6 +122,10 @@ async def accept_post(message: Message, state: FSMContext):
     await message.answer("Пост опубликован.")
 
     current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
+    posts_quantity = await AdminProxyInterface.get_posts_quantity(state=state)
+    if current_post_number == posts_quantity:
+        current_post_number -= 1
+
     await view_admin_suggest_post(
         message=message,
         state=state,

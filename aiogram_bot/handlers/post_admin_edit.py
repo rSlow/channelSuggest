@@ -121,19 +121,22 @@ async def back_to_post(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=AdminPostEditKeyboard.Buttons.save), state=PostAdminView.edit)
 async def save_post_changes(message: Message, state: FSMContext):
+    current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
     await AdminProxyInterface.save_post_to_db(state=state)
     await view_admin_suggest_post(
         message=message,
         state=state,
-        current=True
+        post_number=current_post_number,
+        update_posts_quantity=True
     )
 
 
 @dp.message_handler(Text(equals=AdminPostEditKeyboard.Buttons.decline), state=PostAdminView.edit)
 async def cancel_post_changes(message: Message, state: FSMContext):
     current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
-    db_post = await Post.get_post(
-        post_number=current_post_number
+    current_post = await AdminProxyInterface.get_post(state=state)
+    db_post = await Post.get_post_by_id(
+        post_id=current_post.id
     )
     await AdminProxyInterface.set_post(
         state=state,
@@ -142,5 +145,6 @@ async def cancel_post_changes(message: Message, state: FSMContext):
     await view_admin_suggest_post(
         message=message,
         state=state,
-        current=True
+        post_number=current_post_number,
+        update_posts_quantity=True
     )

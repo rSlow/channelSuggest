@@ -12,7 +12,7 @@ from keyboads.start import StartKeyboard
 from templates import render_template
 from utils.exceptions import AudioMixedError, DocumentMixedError, TooMuchMediaError
 from utils.messages import get_add_content_message, get_media_number
-from utils.post_processors import parse_message, compile_post_message, send_delete_media_menu
+from utils.post_processors import parse_message, compile_media_group, send_delete_media_menu
 from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
@@ -51,7 +51,7 @@ async def preview_post(message: Message, state: FSMContext):
 
         else:
             try:
-                post_message = compile_post_message(post=post)
+                post_message = compile_media_group(post=post)
                 await message.answer_media_group(
                     media=post_message
                 )

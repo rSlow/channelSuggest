@@ -100,6 +100,22 @@ class Post(Base):
         return post
 
     @classmethod
+    async def get_post_by_id(cls, post_id: int):
+        async with Session() as session:
+            query = select(
+                cls
+            ).filter_by(
+                id=post_id
+            ).options(
+                selectinload(cls.medias)
+            ).options(
+                selectinload(cls.user)
+            )
+            result = await session.execute(query)
+            post: cls = result.scalars().one()
+        return post
+
+    @classmethod
     async def get_all_quantity(cls):
         async with Session() as session:
             query = select(

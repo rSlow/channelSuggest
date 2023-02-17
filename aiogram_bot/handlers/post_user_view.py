@@ -12,7 +12,7 @@ from handlers.unregistered import delete_center_button_message
 from keyboads.posts import UserPostKeyboard
 from keyboads.start import StartKeyboard
 from utils.messages import view_message_delete
-from utils.post_processors import compile_post_message
+from utils.post_processors import compile_media_group
 from utils.proxy_interfaces.view import ViewProxyInterface
 
 
@@ -59,7 +59,7 @@ async def view_user_post(message: Message,
                 )
             )
         else:
-            post_message = compile_post_message(
+            post_message = compile_media_group(
                 post=user_post
             )
             await message.answer_media_group(

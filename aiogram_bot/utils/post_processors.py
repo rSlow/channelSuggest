@@ -58,7 +58,7 @@ async def parse_message(message: Message):
     return file_id, text, content_type
 
 
-def compile_post_message(post: Post, with_caption: bool = True):
+def compile_media_group(post: Post, with_caption: bool = True):
     media_types_in_post = set([media.media_type for media in post.medias if media.media_type is not None])
     if MediaTypes.document.value in media_types_in_post and len(media_types_in_post) > 1:
         raise DocumentMixedError
@@ -87,7 +87,7 @@ async def send_post_message(message: Message,
             text=post.text
         )
     else:
-        post_message = compile_post_message(
+        post_message = compile_media_group(
             post=post
         )
         await message.answer_media_group(
@@ -104,7 +104,7 @@ async def send_post_message(message: Message,
 async def send_delete_media_menu(message: Message, post: Post, resend_post: bool = False):
     if resend_post:
         await message.answer_media_group(
-            media=compile_post_message(
+            media=compile_media_group(
                 post=post,
                 with_caption=False
             ),
