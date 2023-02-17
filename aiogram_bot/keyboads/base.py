@@ -50,4 +50,3 @@ class BaseKeyboard(ReplyKeyboardMarkup):
             else:
                 self.add(*buttons_list)
                 return
-from contextlib import contextmanager

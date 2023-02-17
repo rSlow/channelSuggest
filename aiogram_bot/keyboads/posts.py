@@ -60,12 +60,14 @@ class UserPostKeyboard(ReplyKeyboardMarkup):
 class DeleteMediasKeyboard(ReplyKeyboardMarkup):
     class Buttons:
         to_post = "Назад к посту 🔙"
-        on_main = BaseKeyboard.on_main_button
 
     def __init__(self, post: Post, *args, **kwargs):
         super().__init__(resize_keyboard=True, *args, **kwargs)
 
         for num, media in enumerate(post.medias, 1):
+            if isinstance(media.media_type, MediaTypes):
+                media.media_type = media.media_type.value
+
             match media.media_type:
                 case MediaTypes.photo.value:
                     desc = "Фото"
@@ -81,7 +83,6 @@ class DeleteMediasKeyboard(ReplyKeyboardMarkup):
             self.insert(f"{desc} (№{num})")
 
         self.insert(self.Buttons.to_post)
-        self.insert(self.Buttons.on_main)
 
 
 class EditTextKeyboard(BaseKeyboard):

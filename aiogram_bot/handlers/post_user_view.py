@@ -24,7 +24,7 @@ async def view_user_post(message: Message,
     try:
         await ViewProxyInterface.init(
             state=state,
-            current_post=post_number,
+            current_post_number=post_number,
             update_posts_quantity=update_posts_quantity,
             post_quantity_func=Post.get_user_posts_quantity(user_id=message.from_user.id)
         )

@@ -1,6 +1,7 @@
-from aiogram.types import ContentType, Message, MediaGroup
+from aiogram.types import ContentType, Message, MediaGroup, ReplyKeyboardMarkup
 
 from ORM.posts import Post, MediaTypes, Media
+from keyboads.posts import DeleteMediasKeyboard
 from utils.exceptions import MediaTypeError, DocumentMixedError, AudioMixedError
 
 
@@ -65,13 +66,50 @@ def compile_post_message(post: Post, with_caption: bool = True):
         raise AudioMixedError
 
     media_group = PostMediaGroup()
-    first_media: "Media" = post.medias[0]
-    media_group.attach_media(
-        media=first_media,
-        caption=post.text if with_caption is True else None
-    )
 
-    for media in post.medias[1:]:
-        media_group.attach_media(media=media)
+    for i, media in enumerate(post.medias, 0):
+        if i == 0 and with_caption is True:
+            caption = post.text
+        else:
+            caption = None
+
+        media_group.attach_media(media=media, caption=caption)
 
     return media_group
+
+
+async def send_post_message(message: Message,
+                            post: Post,
+                            second_info_message_text: str | None = None,
+                            second_info_message_keyboard: ReplyKeyboardMarkup | None = None):
+    if not post.medias:
+        await message.answer(
+            text=post.text
+        )
+    else:
+        post_message = compile_post_message(
+            post=post
+        )
+        await message.answer_media_group(
+            media=post_message
+        )
+
+    if second_info_message_text is not None:
+        await message.answer(
+            text=second_info_message_text,
+            reply_markup=second_info_message_keyboard
+        )
+
+
+async def send_delete_media_menu(message: Message, post: Post, resend_post: bool = False):
+    if resend_post:
+        await message.answer_media_group(
+            media=compile_post_message(
+                post=post,
+                with_caption=False
+            ),
+        )
+    await message.answer(
+        text="Выберите медиафайл для удаления:",
+        reply_markup=DeleteMediasKeyboard(post=post)
+    )

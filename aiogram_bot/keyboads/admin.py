@@ -1,5 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup
 
+from ORM.posts import Post
 from keyboads.base import BaseKeyboard
 
 
@@ -39,3 +40,21 @@ class AdminPostKeyboard(ReplyKeyboardMarkup):
 
         self.row(self.Buttons.edit)
         self.insert(self.Buttons.on_main)
+
+
+class AdminPostEditKeyboard(ReplyKeyboardMarkup):
+    class Buttons:
+        edit_text = "Редактировать текст ✏"
+        del_medias = "Удаление медиафайлов 🗑"
+        save = "Сохранить изменения 💾"
+        decline = "Отменить изменения 🙅"
+
+    def __init__(self, post: Post, *args, **kwargs):
+        super().__init__(resize_keyboard=True, row_width=2, *args, **kwargs)
+        if post.text:
+            self.insert(self.Buttons.edit_text)
+        if post.medias:
+            self.insert(self.Buttons.del_medias)
+
+        self.insert(self.Buttons.save)
+        self.insert(self.Buttons.decline)

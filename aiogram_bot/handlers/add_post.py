@@ -12,7 +12,7 @@ from keyboads.start import StartKeyboard
 from templates import render_template
 from utils.exceptions import AudioMixedError, DocumentMixedError, TooMuchMediaError
 from utils.messages import get_add_content_message, get_media_number
-from utils.post_processors import parse_message, compile_post_message
+from utils.post_processors import parse_message, compile_post_message, send_delete_media_menu
 from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
@@ -123,19 +123,13 @@ async def receive_new_text(message: Message, state: FSMContext):
 
 
 @dp.message_handler(Text(equals=ConfirmPostKeyboard.Buttons.del_medias), state=AddPost.confirm_post)
-async def delete_media_menu(message: Message, state: FSMContext, send_post_message: bool = False):
+async def delete_media_menu(message: Message, state: FSMContext, resend_post: bool = False):
     await AddPost.del_medias.set()
     post = await PostAddProxyInterface.get_post(state=state)
-    if send_post_message:
-        await message.answer_media_group(
-            media=compile_post_message(
-                post=post,
-                with_caption=False
-            ),
-        )
-    await message.answer(
-        text="Выберите фото для удаления:",
-        reply_markup=DeleteMediasKeyboard(post=post)
+    await send_delete_media_menu(
+        message=message,
+        post=post,
+        resend_post=resend_post
     )
 
 
@@ -148,7 +142,7 @@ async def delete_media(message: Message, state: FSMContext):
         await delete_media_menu(
             message=message,
             state=state,
-            send_post_message=True
+            resend_post=True
         )
     else:
         await preview_post(

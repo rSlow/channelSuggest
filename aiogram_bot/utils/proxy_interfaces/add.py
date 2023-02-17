@@ -106,14 +106,13 @@ class PostAddProxyInterface(ProxyInterface):
                 user_data[cls.CHECKING] = False
                 user_data[cls.ALLOW_SEND_EXPLAIN_MESSAGE] = False
 
-                explain_message = await bot.send_message(
+                if user_data[cls.EXPLAIN_MESSAGE] is not None:
+                    await user_data[cls.EXPLAIN_MESSAGE].delete()
+
+                user_data[cls.EXPLAIN_MESSAGE] = await bot.send_message(
                     chat_id=state.chat,
                     text=user_data[cls.EXPLAIN_MESSAGE_TEXT]
                 )
-
-                if user_data[cls.EXPLAIN_MESSAGE] is not None:
-                    await user_data[cls.EXPLAIN_MESSAGE].delete()
-                user_data[cls.EXPLAIN_MESSAGE] = explain_message
 
                 break
 

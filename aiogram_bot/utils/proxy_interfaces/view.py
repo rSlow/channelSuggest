@@ -9,12 +9,12 @@ from utils.proxy_interfaces.base import ProxyInterface
 class ViewProxyInterface(ProxyInterface):
     VIEW_POST = "view_post"
     POSTS_QUANTITY = "posts_quantity"
-    CURRENT_VIEW_POST = "current_view_post"
+    CURRENT_VIEW_POST_NUMBER = "current_view_post_number"
 
     @classmethod
     async def init(cls,
                    state: FSMContext,
-                   current_post: int,
+                   current_post_number: int | None,
                    update_posts_quantity: bool,
                    post_quantity_func: Coroutine):
         if await cls._get_data(state=state, key=cls.POSTS_QUANTITY,
@@ -26,7 +26,7 @@ class ViewProxyInterface(ProxyInterface):
             )
         await cls._set_data(
             state=state,
-            data={cls.CURRENT_VIEW_POST: current_post}
+            data={cls.CURRENT_VIEW_POST_NUMBER: current_post_number}
         )
 
     @classmethod
@@ -40,7 +40,7 @@ class ViewProxyInterface(ProxyInterface):
     async def get_current_post_number(cls, state: FSMContext) -> int:
         return await cls._get_data(
             state=state,
-            key=cls.CURRENT_VIEW_POST
+            key=cls.CURRENT_VIEW_POST_NUMBER
         )
 
     @classmethod
@@ -56,3 +56,9 @@ class ViewProxyInterface(ProxyInterface):
             state=state,
             key=cls.VIEW_POST
         )
+
+    @classmethod
+    async def set_post_text(cls, text: str, state: FSMContext):
+        async with state.proxy() as data:
+            post: Post = data[cls.VIEW_POST]
+            post.text = text

@@ -5,7 +5,7 @@ from bot import bot
 from utils.post_processors import compile_post_message
 
 
-async def send_post(post: Post):
+async def send_post_to_channel(post: Post):
     if not post.medias:
         await bot.send_message(
             chat_id=os.getenv("CHANNEL_ID"),
