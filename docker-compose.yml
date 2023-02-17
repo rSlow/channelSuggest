@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  aiogram:
+    build: ./aiogram_bot
+    env_file:
+      - ./env/aiogram.env
+      - ./env/db.env
+    restart: always
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - "${DB_PORT}:5432"
+    env_file:
+      - ./env/db.env
+    volumes:
+      - pgdata:${PGDATA_PATH}
+    environment:
+      PGDATA: ${PGDATA_PATH}
+
+
+volumes:
+  pgdata:
