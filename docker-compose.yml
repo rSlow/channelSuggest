@@ -6,6 +6,8 @@ services:
     env_file:
       - ./env/aiogram.env
       - ./env/db.env
+    environment:
+      - TZ=Europe/Moscow
     restart: always
     depends_on:
       - postgres

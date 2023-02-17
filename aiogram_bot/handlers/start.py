@@ -24,7 +24,6 @@ async def start(message: Message, answer: str | None = None):
         )
 
     await Start.start.set()
-
     is_user_admin = message.from_user.id in bot.admins
     await message.answer(
         text=answer or TimeAnswer(message.date.time()),

@@ -35,7 +35,11 @@ async def preview_post(message: Message, state: FSMContext):
 
     if not post.text and not post.medias:
         await message.answer(
-            text="Чтобы предложить пост, он должен иметь хотя бы один медиафайл или какой-либо текст."
+            text="Пустой пост нельзя выложить. Нужно отправить хотя бы один медиафайл или текст."
+        )
+        await start(
+            message=message,
+            answer="Возвращаемся в главное меню..."
         )
     else:
         await AddPost.confirm_post.set()

@@ -28,7 +28,7 @@ async def view_admin_suggest_post(message: Message,
                                   update_posts_quantity: bool = True):
     if not current:
         try:
-            if post_number is None:
+            if post_number is None or post_number == 0:
                 post_number = 1
             await AdminProxyInterface.init(
                 state=state,
@@ -59,6 +59,10 @@ async def view_admin_suggest_post(message: Message,
             post=post
         )
 
+        keyboard = AdminPostKeyboard(
+            posts_quantity=posts_quantity,
+            current_post_number=current_post_number
+        )
         user_text_block = render_template(
             template_name="user_block.jinja2",
             data={
@@ -72,10 +76,7 @@ async def view_admin_suggest_post(message: Message,
             message=message,
             post=post,
             second_info_message_text=user_text_block,
-            second_info_message_keyboard=AdminPostKeyboard(
-                posts_quantity=posts_quantity,
-                current_post_number=current_post_number
-            )
+            second_info_message_keyboard=keyboard
         )
 
 

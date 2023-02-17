@@ -3,7 +3,6 @@ from aiogram.dispatcher.filters import Text
 from aiogram.types import Message, ContentTypes
 
 from FSM.post_admin_view import PostAdminView
-from ORM.posts import Post
 
 from bot import dp
 from handlers.post_admin_view import view_admin_suggest_post
@@ -100,6 +99,14 @@ async def delete_media(message: Message, state: FSMContext):
             state=state,
             resend_post=True
         )
+    elif not updated_post.medias and not updated_post.text:
+        await message.answer(
+            text="В посте нужно оставить хотя бы один медиафайл или текст."
+        )
+        await cancel_post_changes(
+            message=message,
+            state=state
+        )
     else:
         await edit_post(
             message=message,
@@ -134,14 +141,6 @@ async def save_post_changes(message: Message, state: FSMContext):
 @dp.message_handler(Text(equals=AdminPostEditKeyboard.Buttons.decline), state=PostAdminView.edit)
 async def cancel_post_changes(message: Message, state: FSMContext):
     current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
-    current_post = await AdminProxyInterface.get_post(state=state)
-    db_post = await Post.get_post_by_id(
-        post_id=current_post.id
-    )
-    await AdminProxyInterface.set_post(
-        state=state,
-        post=db_post
-    )
     await view_admin_suggest_post(
         message=message,
         state=state,
