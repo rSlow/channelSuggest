@@ -68,7 +68,7 @@ async def dice(message: Message):
                 result_message = "Ну тут без комментариев. Красавчик!"
             case _:
                 result_message = "Без шансов. Давай когда-нибудь потом, хорошо?"
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(3)
 
     elif message.dice.emoji == "⚽":
         await Dice.play_football(user_id=message.from_user.id)

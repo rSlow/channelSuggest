@@ -30,7 +30,7 @@ class Dice(Base):
         async with Session() as session:
             async with session.begin():
                 game_subquery = select(cls.cube).filter_by(telegram_user_id=user_id).scalar_subquery()
-                query = update(cls).filter_by(telegram_user_id=user_id).values(**{game: game_subquery})
+                query = update(cls).filter_by(telegram_user_id=user_id).values(**{game: game_subquery + 1})
                 await session.execute(query)
 
     @classmethod
