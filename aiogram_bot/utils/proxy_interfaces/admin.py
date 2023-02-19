@@ -32,3 +32,9 @@ class AdminProxyInterface(ViewProxyInterface):
             medias_list: list = post.medias[:]
             medias_list.pop(index)
             post.medias = medias_list
+
+    @classmethod
+    async def remove_text(cls, state: FSMContext):
+        async with state.proxy() as data:
+            post: Post = data[cls.VIEW_POST]
+            post.text = None

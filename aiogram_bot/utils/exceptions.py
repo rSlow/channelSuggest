@@ -3,13 +3,5 @@ class MediaTypeError(TypeError):
         super().__init__(f"<{media_type}> not expected as media type")
 
 
-class AudioMixedError(TypeError):
-    pass
-
-
-class DocumentMixedError(TypeError):
-    pass
-
-
 class TooMuchMediaError(RuntimeError):
     pass

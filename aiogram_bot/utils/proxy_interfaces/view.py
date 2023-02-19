@@ -16,14 +16,18 @@ class ViewProxyInterface(ProxyInterface):
                    state: FSMContext,
                    current_post_number: int | None,
                    update_posts_quantity: bool,
-                   post_quantity_func: Coroutine):
-        if await cls._get_data(state=state, key=cls.POSTS_QUANTITY,
-                               default=False) is False or update_posts_quantity is True:
-            posts_quantity = await post_quantity_func
+                   posts_quantity_coroutine: Coroutine):
+        if update_posts_quantity is True or await cls.get_posts_quantity(state=state) is None:
+            posts_quantity = await posts_quantity_coroutine
             await cls._set_data(
                 state=state,
                 data={cls.POSTS_QUANTITY: posts_quantity}
             )
+        else:
+            posts_quantity_coroutine.close()
+
+        if current_post_number is None or current_post_number == 0:
+            current_post_number = 1
         await cls._set_data(
             state=state,
             data={cls.CURRENT_VIEW_POST_NUMBER: current_post_number}

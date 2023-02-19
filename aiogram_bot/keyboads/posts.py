@@ -2,7 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup
 
 from ORM.posts import Post, MediaTypes
 from utils.exceptions import MediaTypeError
-from .base import BaseKeyboard
+from .base import BaseKeyboard, PostsKeyboard
 
 
 class AddPostKeyboard(BaseKeyboard):
@@ -37,24 +37,15 @@ class ConfirmPostKeyboard(BaseKeyboard):
             self.insert(self.Buttons.del_medias)
 
 
-class UserPostKeyboard(ReplyKeyboardMarkup):
-    class Buttons:
-        next = ">"
-        previous = "<"
+class UserPostKeyboard(PostsKeyboard):
+    class Buttons(PostsKeyboard.Buttons):
         delete = "Удалить 🗑"
         on_main = BaseKeyboard.on_main_button
 
-    def __init__(self, posts_quantity: int, current_post_number: int, *args, **kwargs):
-        super().__init__(resize_keyboard=True, *args, **kwargs)
-
-        if current_post_number > 1:
-            self.add(self.Buttons.previous)
-        self.insert(f"{current_post_number} / {posts_quantity}")
-        if current_post_number < posts_quantity:
-            self.insert(self.Buttons.next)
-
-        self.row(self.Buttons.delete)
-        self.insert(self.Buttons.on_main)
+    buttons_lower_list = [
+        Buttons.delete,
+        Buttons.on_main
+    ]
 
 
 class DeleteMediasKeyboard(ReplyKeyboardMarkup):
@@ -85,12 +76,14 @@ class DeleteMediasKeyboard(ReplyKeyboardMarkup):
         self.insert(self.Buttons.to_post)
 
 
-class EditTextKeyboard(BaseKeyboard):
+class EditPostTextKeyboard(BaseKeyboard):
     class Buttons:
         get_text = "Получить текст 📜"
+        del_text = "Удалить текст 🗑"
         to_post = "Назад к посту 🔙"
 
     buttons_list = [
         Buttons.get_text,
+        Buttons.del_text,
         Buttons.to_post,
     ]

@@ -5,15 +5,16 @@ from aiogram.dispatcher import FSMContext
 
 class ProxyInterface:
     @staticmethod
-    async def _get_data(state: FSMContext, key: str, default: Any = None):
+    async def _get_data(state: FSMContext, key: str):
         data = await state.get_data()
         try:
             value: Any = data[key]
         except KeyError:
-            if default is not None:
-                value = default
-            else:
-                raise
+            value = None
+            # if default is not None:
+            #     value = default
+            # else:
+            #     raise
         return value
 
     @staticmethod

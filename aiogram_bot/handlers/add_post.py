@@ -6,13 +6,13 @@ from FSM.post_add import Start, AddPost
 from ORM.posts import MediaTypesList
 from bot import dp
 from handlers.start import start
-from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard, DeleteMediasKeyboard, EditTextKeyboard
+from keyboads.posts import AddPostKeyboard, ConfirmPostKeyboard, DeleteMediasKeyboard, EditPostTextKeyboard
 from keyboads.start import StartKeyboard
 
 from templates import render_template
-from utils.exceptions import AudioMixedError, DocumentMixedError, TooMuchMediaError
+from utils.exceptions import TooMuchMediaError
 from utils.messages import get_add_content_message, get_media_number
-from utils.post_processors import parse_message, compile_media_group, send_delete_media_menu
+from utils.post_processors import parse_message, send_delete_media_menu, send_post_message
 from utils.proxy_interfaces.add import PostAddProxyInterface
 
 
@@ -27,48 +27,32 @@ async def suggest_post(message: Message, state: FSMContext):
     )
 
 
-@dp.message_handler(Text(equals=EditTextKeyboard.Buttons.to_post), state=AddPost.edit_text)
+@dp.message_handler(Text(equals=EditPostTextKeyboard.Buttons.to_post), state=AddPost.edit_text)
 @dp.message_handler(Text(equals=DeleteMediasKeyboard.Buttons.to_post), state=AddPost.del_medias)
 @dp.message_handler(Text(equals=AddPostKeyboard.Buttons.view), state=AddPost.set_post)
 async def preview_post(message: Message, state: FSMContext):
     post = await PostAddProxyInterface.get_post(state)
 
-    if not post.text and not post.medias:
-        await message.answer(
-            text="Пустой пост нельзя выложить. Нужно отправить хотя бы один медиафайл или текст."
-        )
+    if post.is_empty:
         await start(
             message=message,
-            answer="Возвращаемся в главное меню..."
+            answer=f"Пустой пост нельзя выложить. Нужно отправить хотя бы один медиафайл или текст. "
+                   f"Возвращаю в главное меню."
+        )
+    elif post.is_valid:
+        await AddPost.confirm_post.set()
+        await send_post_message(
+            message=message,
+            post=post,
+            second_info_message_keyboard=ConfirmPostKeyboard(post=post),
+            second_info_message_text="Отправляем пост?"
         )
     else:
-        await AddPost.confirm_post.set()
-
-        if not post.medias:
-            await message.answer(
-                text=post.text
-            )
-            await message.answer(
-                text="Отправляем пост?",
-                reply_markup=ConfirmPostKeyboard(post=post)
-            )
-
-        else:
-            try:
-                post_message = compile_media_group(post=post)
-                await message.answer_media_group(
-                    media=post_message
-                )
-                await message.answer(
-                    text="Отправляем пост?",
-                    reply_markup=ConfirmPostKeyboard(post=post)
-                )
-            except (AudioMixedError, DocumentMixedError):
-                await start(
-                    message=message,
-                    answer=f"Аудио или документы не может быть прикреплены совместно "
-                           f"с другими видами медиафайлов. Пост отклонен."
-                )
+        await start(
+            message=message,
+            answer=f"Аудио или документы не может быть прикреплены совместно "
+                   f"с другими видами медиафайлов. Пост отклонен."
+        )
 
 
 # it should be upper, but button of keyboard will be checked as text of media
@@ -87,11 +71,7 @@ async def accept_media(message: Message, state: FSMContext):
         await PostAddProxyInterface.send_explain_message(state=state, text=add_content_message_text)
 
     except TooMuchMediaError:
-        PostAddProxyInterface.set_checking(user_id=state.user, flag=False)
-        explain_message = PostAddProxyInterface.get_explain_message(user_id=state.user)
-        if explain_message is not None:
-            await explain_message.delete()
-
+        await PostAddProxyInterface.cancel_check(user_id=state.user)
         await start(
             message=message,
             answer=f"Было прикреплено более 10 медиафайлов. Возможно прикрепление только до 10 файлов. Пост отклонен."
@@ -103,15 +83,24 @@ async def edit_text(message: Message):
     await AddPost.edit_text.set()
     await message.answer(
         text=f"Ожидаю новый текст. Старый текст можно получить, нажав на кнопку "
-             f"<pre>{EditTextKeyboard.Buttons.get_text}</pre>",
-        reply_markup=EditTextKeyboard()
+             f"<pre>{EditPostTextKeyboard.Buttons.get_text}</pre>",
+        reply_markup=EditPostTextKeyboard()
     )
 
 
-@dp.message_handler(Text(equals=EditTextKeyboard.Buttons.get_text), state=AddPost.edit_text)
+@dp.message_handler(Text(equals=EditPostTextKeyboard.Buttons.get_text), state=AddPost.edit_text)
 async def get_text(message: Message, state: FSMContext):
     post_text = await PostAddProxyInterface.get_text(state=state)
     await message.answer(text=post_text)
+
+
+@dp.message_handler(Text(equals=EditPostTextKeyboard.Buttons.del_text), state=AddPost.edit_text)
+async def delete_text(message: Message, state: FSMContext):
+    await PostAddProxyInterface.remove_text(state=state)
+    await preview_post(
+        message=message,
+        state=state
+    )
 
 
 @dp.message_handler(content_types=ContentTypes.TEXT, state=AddPost.edit_text)

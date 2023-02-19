@@ -2,13 +2,12 @@ from aiogram.types import ContentType, Message, MediaGroup, ReplyKeyboardMarkup
 
 from ORM.posts import Post, MediaTypes, Media
 from keyboads.posts import DeleteMediasKeyboard
-from utils.exceptions import MediaTypeError, DocumentMixedError, AudioMixedError
+from utils.exceptions import MediaTypeError
 
 
 class PostMediaGroup(MediaGroup):
     def attach_media(self: MediaGroup, media: "Media", caption: str | None = None):
-        if isinstance(media.media_type, MediaTypes):
-            media.media_type = media.media_type.value
+        media.set_string_type()
 
         match media.media_type:
             case MediaTypes.photo.value:
@@ -59,12 +58,6 @@ async def parse_message(message: Message):
 
 
 def compile_media_group(post: Post, with_caption: bool = True):
-    media_types_in_post = set([media.media_type for media in post.medias if media.media_type is not None])
-    if MediaTypes.document.value in media_types_in_post and len(media_types_in_post) > 1:
-        raise DocumentMixedError
-    if MediaTypes.audio.value in media_types_in_post and len(media_types_in_post) > 1:
-        raise AudioMixedError
-
     media_group = PostMediaGroup()
 
     for i, media in enumerate(post.medias, 0):
@@ -87,11 +80,11 @@ async def send_post_message(message: Message,
             text=post.text
         )
     else:
-        post_message = compile_media_group(
+        media_group = compile_media_group(
             post=post
         )
         await message.answer_media_group(
-            media=post_message
+            media=media_group
         )
 
     if second_info_message_text is not None:

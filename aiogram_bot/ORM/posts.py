@@ -116,7 +116,7 @@ class Post(Base):
         return post
 
     @classmethod
-    async def get_all_quantity(cls):
+    async def get_all_quantity(cls) -> int:
         async with Session() as session:
             query = select(
                 func.count()
@@ -164,6 +164,26 @@ class Post(Base):
         if id_medias_to_delete:
             await Media.delete(ids=id_medias_to_delete)
 
+    @property
+    def is_valid(self) -> bool:
+        if self.is_empty:
+            return False
+        if self.medias:
+            for media in self.medias:
+                media.set_string_type()
+            media_types_in_post = set([media.media_type for media in self.medias])
+            if MediaTypes.document.value in media_types_in_post and len(media_types_in_post) > 1:
+                return False
+            if MediaTypes.audio.value in media_types_in_post and len(media_types_in_post) > 1:
+                return False
+        return True
+
+    @property
+    def is_empty(self) -> bool:
+        if self.text or self.medias:
+            return False
+        return True
+
 
 class Media(Base):
     __tablename__ = "medias"
@@ -183,3 +203,7 @@ class Media(Base):
                     cls.id.in_(ids)
                 )
                 await session.execute(query)
+
+    def set_string_type(self):
+        if isinstance(self.media_type, MediaTypes):
+            self.media_type = self.media_type.value

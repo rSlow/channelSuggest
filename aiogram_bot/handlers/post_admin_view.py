@@ -9,7 +9,7 @@ from ORM.posts import Post
 from bot import dp
 from handlers.start import start
 from handlers.unregistered import delete_center_button_message
-from keyboads.admin import AdminPostKeyboard
+from keyboads.admin import AdminPostsKeyboard
 from keyboads.start import StartKeyboard
 from templates import render_template
 from utils.admin import admin_required
@@ -24,24 +24,15 @@ from utils.sender import send_post_to_channel
 async def view_admin_suggest_post(message: Message,
                                   state: FSMContext,
                                   post_number: int | None = None,
-                                  current: bool = False,
                                   update_posts_quantity: bool = True):
-    if not current:
-        try:
-            if post_number is None or post_number == 0:
-                post_number = 1
-            await AdminProxyInterface.init(
-                state=state,
-                current_post_number=post_number,
-                update_posts_quantity=update_posts_quantity,
-                post_quantity_func=Post.get_all_quantity()
-            )
-        except RuntimeWarning:
-            pass
-
-    posts_quantity = await AdminProxyInterface.get_posts_quantity(
-        state=state
+    await AdminProxyInterface.init(
+        state=state,
+        current_post_number=post_number,
+        update_posts_quantity=update_posts_quantity,
+        posts_quantity_coroutine=Post.get_all_quantity()
     )
+
+    posts_quantity = await AdminProxyInterface.get_posts_quantity(state=state)
 
     if posts_quantity == 0:
         await start(
@@ -50,16 +41,15 @@ async def view_admin_suggest_post(message: Message,
         )
     else:
         await PostAdminView.view.set()
+
         current_post_number = await AdminProxyInterface.get_current_post_number(state=state)
-        post = await Post.get_post(
-            post_number=current_post_number
-        )
+        post = await Post.get_post(post_number=current_post_number)
         await AdminProxyInterface.set_post(
             state=state,
             post=post
         )
 
-        keyboard = AdminPostKeyboard(
+        keyboard = AdminPostsKeyboard(
             posts_quantity=posts_quantity,
             current_post_number=current_post_number
         )
@@ -83,12 +73,11 @@ async def view_admin_suggest_post(message: Message,
 dp.register_message_handler(callback=delete_center_button_message, regexp=r"\d+\s[/]\s\d", state=PostAdminView.view)
 
 
-@dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.previous), state=PostAdminView.view)
+@dp.message_handler(Text(equals=AdminPostsKeyboard.Buttons.previous), state=PostAdminView.view)
 async def get_previous_post(message: Message, state: FSMContext):
     previous_post_number = await AdminProxyInterface.get_current_post_number(state=state) - 1
-
     if previous_post_number == 0:
-        await view_message_delete(message)
+        await view_message_delete(message=message)
     else:
         await view_admin_suggest_post(
             message=message,
@@ -98,13 +87,13 @@ async def get_previous_post(message: Message, state: FSMContext):
         )
 
 
-@dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.next), state=PostAdminView.view)
+@dp.message_handler(Text(equals=AdminPostsKeyboard.Buttons.next), state=PostAdminView.view)
 async def get_next_post(message: Message, state: FSMContext):
     next_post_number = await AdminProxyInterface.get_current_post_number(state=state) + 1
     posts_quantity = await AdminProxyInterface.get_posts_quantity(state=state)
 
     if next_post_number > posts_quantity:
-        await view_message_delete(message)
+        await view_message_delete(message=message)
     else:
         await view_admin_suggest_post(
             message=message,
@@ -114,7 +103,7 @@ async def get_next_post(message: Message, state: FSMContext):
         )
 
 
-@dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.accept), state=PostAdminView.view)
+@dp.message_handler(Text(equals=AdminPostsKeyboard.Buttons.accept), state=PostAdminView.view)
 async def accept_post(message: Message, state: FSMContext):
     post = await AdminProxyInterface.get_post(state=state)
     await send_post_to_channel(post=post)
@@ -135,7 +124,7 @@ async def accept_post(message: Message, state: FSMContext):
     )
 
 
-@dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.decline), state=PostAdminView.view)
+@dp.message_handler(Text(equals=AdminPostsKeyboard.Buttons.decline), state=PostAdminView.view)
 async def decline_post(message: Message, state: FSMContext):
     post = await AdminProxyInterface.get_post(state=state)
     await post.delete()

@@ -6,7 +6,7 @@ from FSM.post_admin_view import PostAdminView
 
 from bot import dp
 from handlers.post_admin_view import view_admin_suggest_post
-from keyboads.admin import AdminPostKeyboard, AdminEditPostTextKeyboard, AdminPostEditKeyboard
+from keyboads.admin import AdminPostsKeyboard, AdminEditPostTextKeyboard, AdminPostEditKeyboard
 from keyboads.posts import DeleteMediasKeyboard
 from templates import render_template
 from utils.messages import get_media_number
@@ -14,7 +14,7 @@ from utils.post_processors import send_post_message, send_delete_media_menu
 from utils.proxy_interfaces.admin import AdminProxyInterface
 
 
-@dp.message_handler(Text(equals=AdminPostKeyboard.Buttons.edit), state=PostAdminView.view)
+@dp.message_handler(Text(equals=AdminPostsKeyboard.Buttons.edit), state=PostAdminView.view)
 async def edit_post(message: Message, state: FSMContext, view_post: bool = False):
     await PostAdminView.edit.set()
     current_post = await AdminProxyInterface.get_post(state=state)
@@ -63,6 +63,21 @@ async def decline_edit_post_text(message: Message, state: FSMContext):
     )
 
 
+@dp.message_handler(Text(equals=AdminEditPostTextKeyboard.Buttons.del_text), state=PostAdminView.edit_text)
+async def delete_text(message: Message, state: FSMContext):
+    updated_post = await AdminProxyInterface.get_post(state=state)
+    if not updated_post.medias:
+        await message.answer("Нельзя удалить текст, когда он является единственным содержимым поста.")
+        await decline_edit_post_text(state=state, message=message)
+    else:
+        await AdminProxyInterface.remove_text(state=state)
+        await edit_post(
+            message=message,
+            state=state,
+            view_post=True
+        )
+
+
 @dp.message_handler(content_types=ContentTypes.TEXT, state=PostAdminView.edit_text)
 async def accept_edit_post_text(message: Message, state: FSMContext):
     await AdminProxyInterface.set_post_text(state=state, text=message.html_text)
@@ -99,7 +114,7 @@ async def delete_media(message: Message, state: FSMContext):
             state=state,
             resend_post=True
         )
-    elif not updated_post.medias and not updated_post.text:
+    elif updated_post.is_empty:
         await message.answer(
             text="В посте нужно оставить хотя бы один медиафайл или текст."
         )

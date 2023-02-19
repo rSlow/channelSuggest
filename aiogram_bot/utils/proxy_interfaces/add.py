@@ -52,6 +52,12 @@ class PostAddProxyInterface(ProxyInterface):
             post.text = text
 
     @classmethod
+    async def remove_text(cls, state: FSMContext):
+        async with state.proxy() as data:
+            post: Post = data[cls.POST]
+            post.text = None
+
+    @classmethod
     async def get_text(cls, state: FSMContext) -> str:
         async with state.proxy() as data:
             post: Post = data[cls.POST]
@@ -121,3 +127,10 @@ class PostAddProxyInterface(ProxyInterface):
                 await asyncio.sleep(1)
                 if user_data[cls.CHECKING]:
                     user_data[cls.ALLOW_SEND_EXPLAIN_MESSAGE] = True
+
+    @classmethod
+    async def cancel_check(cls, user_id: int):
+        cls.set_checking(user_id=user_id, flag=False)
+        explain_message = cls.get_explain_message(user_id=user_id)
+        if explain_message is not None:
+            await explain_message.delete()

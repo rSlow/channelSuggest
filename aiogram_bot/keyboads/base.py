@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from aiogram.types import ReplyKeyboardMarkup
 
 
@@ -50,3 +48,27 @@ class BaseKeyboard(ReplyKeyboardMarkup):
             else:
                 self.add(*buttons_list)
                 return
+
+
+class PostsKeyboard(ReplyKeyboardMarkup):
+    class Buttons:
+        next = ">"
+        previous = "<"
+
+    buttons_lower_list: TypeInterface.buttons_list_type | None = None
+
+    def __init__(self, posts_quantity: int, current_post_number: int, *args, **kwargs):
+        super().__init__(resize_keyboard=True, *args, **kwargs)
+
+        if current_post_number > 1:
+            self.add(self.Buttons.previous)
+        self.insert(f"{current_post_number} / {posts_quantity}")
+        if current_post_number < posts_quantity:
+            self.insert(self.Buttons.next)
+
+        if self.buttons_lower_list is not None:
+            for i, button in enumerate(self.buttons_lower_list):
+                if i % 2 == 0:
+                    self.row(button)
+                else:
+                    self.insert(button)

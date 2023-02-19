@@ -12,7 +12,7 @@ from handlers.unregistered import delete_center_button_message
 from keyboads.posts import UserPostKeyboard
 from keyboads.start import StartKeyboard
 from utils.messages import view_message_delete
-from utils.post_processors import compile_media_group
+from utils.post_processors import send_post_message
 from utils.proxy_interfaces.view import ViewProxyInterface
 
 
@@ -21,15 +21,12 @@ async def view_user_post(message: Message,
                          state: FSMContext,
                          post_number: int = 1,
                          update_posts_quantity: bool = True):
-    try:
-        await ViewProxyInterface.init(
-            state=state,
-            current_post_number=post_number,
-            update_posts_quantity=update_posts_quantity,
-            post_quantity_func=Post.get_user_posts_quantity(user_id=message.from_user.id)
-        )
-    except RuntimeWarning:
-        pass
+    await ViewProxyInterface.init(
+        state=state,
+        current_post_number=post_number,
+        update_posts_quantity=update_posts_quantity,
+        posts_quantity_coroutine=Post.get_user_posts_quantity(user_id=message.from_user.id)
+    )
 
     posts_quantity = await ViewProxyInterface.get_posts_quantity(
         state=state
@@ -49,30 +46,15 @@ async def view_user_post(message: Message,
             state=state,
             post=user_post
         )
-
-        if not user_post.medias:
-            await message.answer(
-                text=user_post.text,
-                reply_markup=UserPostKeyboard(
-                    current_post_number=post_number,
-                    posts_quantity=posts_quantity
-                )
+        await send_post_message(
+            message=message,
+            post=user_post,
+            second_info_message_text="Статус поста: <b>не опубликован</b>",
+            second_info_message_keyboard=UserPostKeyboard(
+                current_post_number=post_number,
+                posts_quantity=posts_quantity
             )
-        else:
-            post_message = compile_media_group(
-                post=user_post
-            )
-            await message.answer_media_group(
-                media=post_message
-            )
-            # service message to add keyboard
-            await message.answer(
-                text="Статус поста: <b>не опубликован</b>",
-                reply_markup=UserPostKeyboard(
-                    current_post_number=post_number,
-                    posts_quantity=posts_quantity
-                )
-            )
+        )
 
 
 dp.register_message_handler(callback=delete_center_button_message, regexp=r"\d+\s[/]\s\d", state=PostView.view)
