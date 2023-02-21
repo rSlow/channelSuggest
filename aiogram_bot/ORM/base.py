@@ -16,12 +16,14 @@ class Base(DeclarativeBase):
 async def create_database():
     try:
         from .users import User
-        # from .posts import Post, Media
+        from .posts import Post, Media
 
-        async with Engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
     except ImportError:
-        raise
+        from aiogram_bot.ORM.users import User
+        from aiogram_bot.ORM.posts import Post, Media
+
+    async with Engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 async def stop_database():
