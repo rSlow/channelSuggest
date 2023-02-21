@@ -23,7 +23,7 @@ class Dice(Base):
     casino: Mapped[int] = mapped_column(default=0)
 
     @classmethod
-    async def _play_game(cls, user_id, game: str):
+    async def _play_game(cls, user_id: int, game: str):
         if game not in cls.GAMES:
             raise TypeError(f"game {game} is not available")
 
@@ -34,21 +34,21 @@ class Dice(Base):
                 await session.execute(query)
 
     @classmethod
-    async def play_cube(cls, user_id):
+    async def play_cube(cls, user_id: int):
         await cls._play_game(user_id=user_id, game="cube")
 
     @classmethod
-    async def play_darts(cls, user_id):
+    async def play_darts(cls, user_id: int):
         await cls._play_game(user_id=user_id, game="darts")
 
     @classmethod
-    async def play_football(cls, user_id):
+    async def play_football(cls, user_id: int):
         await cls._play_game(user_id=user_id, game="football")
 
     @classmethod
-    async def play_basketball(cls, user_id):
+    async def play_basketball(cls, user_id: int):
         await cls._play_game(user_id=user_id, game="basketball")
 
     @classmethod
-    async def play_casino(cls, user_id):
+    async def play_casino(cls, user_id: int):
         await cls._play_game(user_id=user_id, game="casino")

@@ -7,7 +7,8 @@ class ModifiedMemoryStorage(MemoryStorage):
     async def set_state(self, *,
                         chat: str | int | None = None,
                         user: str | int | None = None,
-                        state: bytes | str = None):
+                        state: bytes | str = None,
+                        init: bool = False):
         current_state = await self.get_state(
             chat=chat, user=user
         )
@@ -17,7 +18,7 @@ class ModifiedMemoryStorage(MemoryStorage):
                 user=user,
                 state=state
             )
-            if current_state is not None:
+            if not init:
                 await UserState.set_state(
                     user_id=user,
                     state=state
@@ -30,4 +31,5 @@ class ModifiedMemoryStorage(MemoryStorage):
                 chat=user.user_id,
                 user=user.user_id,
                 state=user.state,
+                init=True
             )

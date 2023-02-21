@@ -12,7 +12,7 @@ class UserState(Base):
 
     @classmethod
     async def set_state(cls,
-                        user_id: str | int,
+                        user_id: int,
                         state: bytes | str):
         async with Session() as session:
             async with session.begin():
